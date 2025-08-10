@@ -1,0 +1,50 @@
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.gallery-item {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.gallery-item h3 {
+  margin-top: 0;
+  color: #282c34;
+}
+
+.prompt-text {
+  flex-grow: 1;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+  overflow: hidden;
+  text-align: left;
+}
+
+.gallery-item button {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.App-header nav {
+  margin-top: 10px;
+}
+
+.App-header nav a {
+  color: #61dafb;
+  text-decoration: none;
+  font-size: 1.1rem;
+  margin: 0 15px;
+}
+
+.App-header nav a:hover {
+  text-decoration: underline;
+}

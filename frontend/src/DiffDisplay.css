@@ -1,0 +1,26 @@
+.diff-container {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+  width: 95%;
+  height: 280px; /* Match textarea height */
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
+  text-align: left;
+  overflow-y: auto;
+  white-space: pre-wrap; /* Preserve whitespace and wrap text */
+  line-height: 1.5;
+}
+
+.diff-container ins {
+  background-color: #d4edda; /* Light green */
+  color: #155724; /* Dark green */
+  text-decoration: none;
+}
+
+.diff-container del {
+  background-color: #f8d7da; /* Light red */
+  color: #721c24; /* Dark red */
+  text-decoration: line-through;
+}
