@@ -1,8 +1,19 @@
 import React from 'react';
 import { diff_match_patch, DIFF_DELETE, DIFF_INSERT, DIFF_EQUAL } from 'diff-match-patch';
 import './DiffDisplay.css';
+import './LoadingSpinner.css'; // Import the new CSS for the spinner
 
-const DiffDisplay = ({ text1, text2 }) => {
+const LoadingSpinner = () => (
+  <div className="loading-spinner">
+    <div className="spinner"></div>
+  </div>
+);
+
+const DiffDisplay = ({ text1, text2, isLoading }) => {
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   const dmp = new diff_match_patch();
   const diffs = dmp.diff_main(text1, text2);
   dmp.diff_cleanupSemantic(diffs);
@@ -19,6 +30,11 @@ const DiffDisplay = ({ text1, text2 }) => {
         return null;
     }
   });
+
+  // If there's no difference, show the original text.
+  if (display.length === 0 || (display.length === 1 && display[0].props.children === '')) {
+      return <div className="diff-container">{text1}</div>
+  }
 
   return <div className="diff-container">{display}</div>;
 };
