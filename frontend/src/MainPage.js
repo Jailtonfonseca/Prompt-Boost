@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DiffDisplay from './DiffDisplay';
-import './App.css'; // Keep using the same CSS for simplicity
+import { improvePrompt, sharePrompt, publishPrompt } from './api';
+import './App.css';
 
 function MainPage() {
   const [originalPrompt, setOriginalPrompt] = useState('');
@@ -12,6 +13,14 @@ function MainPage() {
   const [shareableLink, setShareableLink] = useState('');
   const [sharedId, setSharedId] = useState('');
   const [isPublished, setIsPublished] = useState(false);
+  const [notification, setNotification] = useState('');
+
+  const showNotification = (message) => {
+    setNotification(message);
+    setTimeout(() => {
+      setNotification('');
+    }, 3000);
+  };
 
   // Load API key from local storage on component mount
   useEffect(() => {
@@ -45,18 +54,7 @@ function MainPage() {
     setIsPublished(false);
 
     try {
-      const response = await fetch('http://localhost:8000/api/improve-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: originalPrompt, apiKey: apiKey }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'An unknown error occurred.');
-      }
-
-      const data = await response.json();
+      const data = await improvePrompt(originalPrompt, apiKey);
       setImprovedPrompt(data.improved_prompt);
     } catch (err) {
       setError(err.message);
@@ -73,25 +71,12 @@ function MainPage() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:8000/api/prompts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          original_prompt: originalPrompt,
-          improved_prompt: improvedPrompt,
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to create share link.');
-      }
-
-      const data = await response.json();
+      const data = await sharePrompt(originalPrompt, improvedPrompt);
       const shareId = data.share_id;
       const link = `${window.location.origin}/prompt/${shareId}`;
       setShareableLink(link);
       setSharedId(shareId);
+      showNotification('Share link created successfully!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -104,14 +89,9 @@ function MainPage() {
     setIsLoading(true);
     setError('');
     try {
-      const response = await fetch(`http://localhost:8000/api/prompts/${sharedId}/publish`, {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to publish.');
-      }
+      await publishPrompt(sharedId);
       setIsPublished(true);
+      showNotification('Prompt published to the gallery!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,8 +99,14 @@ function MainPage() {
     }
   };
 
+  const handleCopy = (text, message) => {
+    navigator.clipboard.writeText(text);
+    showNotification(message);
+  };
+
   return (
     <div className="App">
+      {notification && <div className={`notification ${notification ? 'show' : ''}`}>{notification}</div>}
       <header className="App-header">
         <h1>Prompt Enhancer</h1>
         <p>Refine your prompts for better AI results.</p>
@@ -152,8 +138,15 @@ function MainPage() {
           />
         </div>
         <div className="prompt-container">
-          <h2>Improved Prompt (Visual Diff)</h2>
-          <DiffDisplay text1={originalPrompt} text2={improvedPrompt} />
+          <div className="prompt-header">
+            <h2>Improved Prompt (Visual Diff)</h2>
+            {improvedPrompt && (
+              <button className="copy-button" onClick={() => handleCopy(improvedPrompt, 'Improved prompt copied!')}>
+                Copy
+              </button>
+            )}
+          </div>
+          <DiffDisplay text1={originalPrompt} text2={improvedPrompt} isLoading={isLoading} />
         </div>
       </main>
 
@@ -162,9 +155,14 @@ function MainPage() {
           {isLoading ? 'Improving...' : 'Improve Prompt'}
         </button>
         {improvedPrompt && (
-          <button onClick={handleShare} disabled={isLoading}>
-            Share
-          </button>
+          <>
+            <button onClick={() => handleCopy(improvedPrompt, 'Improved prompt copied!')}>
+              Copy Improved Prompt
+            </button>
+            <button onClick={handleShare} disabled={isLoading} className="share-button">
+              Share
+            </button>
+          </>
         )}
       </div>
 
@@ -172,7 +170,7 @@ function MainPage() {
         <div className="shareable-link-section">
           <h3>Share this link:</h3>
           <input type="text" readOnly value={shareableLink} />
-          <button onClick={() => navigator.clipboard.writeText(shareableLink)}>
+          <button onClick={() => handleCopy(shareableLink, 'Link copied to clipboard!')}>
             Copy
           </button>
           {!isPublished ? (
