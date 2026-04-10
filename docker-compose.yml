@@ -5,9 +5,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - prompts-db:/app
+    environment:
+      - PYTHONUNBUFFERED=1
     restart: unless-stopped
 
   frontend:

@@ -11,8 +11,18 @@ from typing import Dict
 from pathlib import Path
 import json
 
-from providers import create_provider, PROVIDER_MODELS, BaseProvider
-import recursion
+try:
+    import recursion
+    import openai
+    import google.generativeai as genai
+    from providers import create_provider, PROVIDER_MODELS
+except ImportError:
+    import sys
+    sys.path.insert(0, '/app')
+    import recursion
+    import openai
+    import google.generativeai as genai
+    from providers import create_provider, PROVIDER_MODELS
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQUESTS = 30
@@ -30,7 +40,7 @@ CONFIG_DEFAULTS = {
     "RECURSION_TECHNIQUE": "none",
     "RECURSION_ITERATIONS": "3",
     "RECURSION_SHOW_ITERATIONS": "true",
-    "SYSTEM_PROMPT": recursion.DEFAULT_SYSTEM_PROMPT,
+    "SYSTEM_PROMPT": "",
     "PROVIDER_MAIN": "",
     "PROVIDER_CRITIQUE": ""
 }
@@ -244,7 +254,7 @@ async def get_config():
         recursion_technique=cfg.get("RECURSION_TECHNIQUE", "none"),
         recursion_iterations=int(cfg.get("RECURSION_ITERATIONS", 3)),
         recursion_show_iterations=cfg.get("RECURSION_SHOW_ITERATIONS", "true") == "true",
-        system_prompt=cfg.get("SYSTEM_PROMPT", recursion.DEFAULT_SYSTEM_PROMPT),
+        system_prompt=cfg.get("SYSTEM_PROMPT", "You are an expert prompt engineer. Your task is to refine user prompts to be more clear, focused, and effective for Large Language Models. Respond ONLY with the improved prompt, no explanations."),
         provider_main=ProviderConfigModel(**main_cfg),
         provider_critique=ProviderConfigModel(**critique_cfg) if critique_cfg.get("api_key") else None
     )
@@ -305,7 +315,7 @@ async def improve_prompt(request: PromptRequest, req: Request):
         
         technique = cfg.get("RECURSION_TECHNIQUE", "none")
         iterations = int(cfg.get("RECURSION_ITERATIONS", 3))
-        system_prompt = cfg.get("SYSTEM_PROMPT", recursion.DEFAULT_SYSTEM_PROMPT)
+        system_prompt = cfg.get("SYSTEM_PROMPT", "You are an expert prompt engineer. Your task is to refine user prompts to be more clear, focused, and effective for Large Language Models. Respond ONLY with the improved prompt, no explanations.")
         
         if technique == "self-refine":
             critique_cfg = load_provider_config("CRITIQUE")
