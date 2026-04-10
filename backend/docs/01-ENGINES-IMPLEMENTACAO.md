@@ -568,3 +568,9 @@ async def test_self_refine_engine():
 - Arquitetura: `/backend/docs/00-ARQUITETURA-BACKEND.md`
 - Self-Refine: `/backend/docs/02-SELF-REFINE-ENGINE.md`
 - ToT: `/backend/docs/03-TOT-GOT-ENGINES.md`
+
+---
+
+**Última atualização**: 2025-04-10
+**Versão**: 2.0.0
+**Status**: Completo

@@ -1042,6 +1042,8 @@ VEREDITO FINAL (do Judge):
 
 ---
 
-**Documento criado**: 2025
-**Versão**: 1.0
-**Status**: Completo e pronto para implementação
+---
+
+**Última atualização**: 2025-04-10
+**Versão**: 2.0.0
+**Status**: Completo

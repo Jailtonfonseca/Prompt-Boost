@@ -273,7 +273,7 @@ curl -X POST http://localhost:8000/recursion/execute \
   -H "Authorization: Bearer admin_token" \
   -d '{
     "prompt": "Avalie se devemos migrar de microserviços para arquitetura monolítica",
-    "technique": "debate",
+    "technique": "multi_agent_debate",
     "max_iterations": 4,
     "config": {
       "num_agents": 3,
@@ -287,7 +287,7 @@ curl -X POST http://localhost:8000/recursion/execute \
 ```json
 {
   "session_id": "sess_99999",
-  "technique": "debate",
+  "technique": "multi_agent_debate",
   "status": "completed",
   "final_answer": {
     "decision": "Manter arquitetura de microserviços com consolidação seletiva",

@@ -584,3 +584,9 @@ provider_cost_usd                 # Gauge
 - Frontend: `/frontend/docs/02-INTEGRACAO-WEBSOCKET.md`
 - Engines: `/backend/docs/01-ENGINES-IMPLEMENTACAO.md`
 - Providers: `/backend/docs/08-PROVIDERS-E-LLMS.md`
+
+---
+
+**Última atualização**: 2025-04-10
+**Versão**: 2.0.0
+**Status**: Completo
