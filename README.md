@@ -1,6 +1,6 @@
 # Prompt-Boost
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-GPL--3.0-green)
 ![Python](https://img.shields.io/badge/python-3.9+-yellow)
 ![React](https://img.shields.io/badge/react-19.x-orange)

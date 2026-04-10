@@ -1,26 +1,52 @@
 .diff-container {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 15px;
-  width: 95%;
-  height: 280px; /* Match textarea height */
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 1rem;
-  text-align: left;
+  background: var(--bg-input);
+  border: 1px solid var(--border-dark);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  width: 100%;
+  min-height: 200px;
+  max-height: 280px;
   overflow-y: auto;
-  white-space: pre-wrap; /* Preserve whitespace and wrap text */
-  line-height: 1.5;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-dark);
+}
+
+.diff-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.diff-container::-webkit-scrollbar-track {
+  background: var(--bg-card);
+  border-radius: 4px;
+}
+
+.diff-container::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
+  border-radius: 4px;
+}
+
+.diff-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .diff-container ins {
-  background-color: #d4edda; /* Light green */
-  color: #155724; /* Dark green */
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success-light);
   text-decoration: none;
+  border-radius: 3px;
+  padding: 1px 4px;
+  border-bottom: 2px solid var(--success);
 }
 
 .diff-container del {
-  background-color: #f8d7da; /* Light red */
-  color: #721c24; /* Dark red */
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--error-light);
   text-decoration: line-through;
+  border-radius: 3px;
+  padding: 1px 4px;
+  border-bottom: 2px solid var(--error);
 }

@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-04-10
+
+### Added
+- Complete UI/UX redesign with modern dark theme
+- Gradient backgrounds and smooth animations
+- Responsive design for mobile devices
+- Custom typography (Inter + JetBrains Mono fonts)
+- Toast notifications with animations
+- Enhanced diff display with color highlighting
+- Portuguese localization for all UI text
+
+### Changed
+- Updated color palette (Indigo/Purple theme)
+- Improved loading spinner animations
+- Better card hover effects with shadows
+- Gallery page with improved cards
+- SEO meta tags in index.html
+
+### Fixed
+- Fixed API URL in GalleryPage (use env variable)
+- Fixed diff display empty state
+- Fixed loading spinner text
+
 ## [1.1.0] - 2026-04-10
 
 ### Added

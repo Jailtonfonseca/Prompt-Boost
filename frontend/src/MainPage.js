@@ -18,12 +18,12 @@ function MainPage() {
     setNotification(message);
     setTimeout(() => {
       setNotification('');
-    }, 3000);
+    }, 3500);
   };
 
   const handleImprovePrompt = async () => {
-    if (!originalPrompt) {
-      setError('Please enter a prompt to improve.');
+    if (!originalPrompt.trim()) {
+      setError('Digite um prompt para melhorar.');
       return;
     }
 
@@ -37,6 +37,7 @@ function MainPage() {
     try {
       const data = await improvePrompt(originalPrompt);
       setImprovedPrompt(data.improved_prompt);
+      showNotification('Prompt otimizado com sucesso!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -46,7 +47,7 @@ function MainPage() {
 
   const handleShare = async () => {
     if (!originalPrompt || !improvedPrompt) {
-      setError('You must have an original and an improved prompt to share.');
+      setError('Você precisa ter um prompt original e um melhorado para compartilhar.');
       return;
     }
     setIsLoading(true);
@@ -57,7 +58,7 @@ function MainPage() {
       const link = `${window.location.origin}/prompt/${shareId}`;
       setShareableLink(link);
       setSharedId(shareId);
-      showNotification('Share link created successfully!');
+      showNotification('Link criado com sucesso!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,7 +73,7 @@ function MainPage() {
     try {
       await publishPrompt(sharedId);
       setIsPublished(true);
-      showNotification('Prompt published to the gallery!');
+      showNotification('Prompt publicado na galeria!');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -87,12 +88,13 @@ function MainPage() {
 
   return (
     <div className="App">
-      {notification && <div className={`notification ${notification ? 'show' : ''}`}>{notification}</div>}
+      {notification && <div className="notification">{notification}</div>}
+      
       <header className="App-header">
-        <h1>Prompt Enhancer</h1>
-        <p>Refine your prompts for better AI results.</p>
+        <h1>Prompt-Boost</h1>
+        <p>Otimize seus prompts e obtenha melhores resultados da IA</p>
         <nav>
-          <Link to="/gallery">View Gallery</Link>
+          <Link to="/gallery">Ver Galeria</Link>
         </nav>
       </header>
 
@@ -100,19 +102,20 @@ function MainPage() {
 
       <main className="main-content">
         <div className="prompt-container">
-          <h2>Original Prompt</h2>
+          <h2>Prompt Original</h2>
           <textarea
             value={originalPrompt}
             onChange={(e) => setOriginalPrompt(e.target.value)}
-            placeholder="Enter your prompt here..."
+            placeholder="Digite seu prompt aqui...&#10;&#10;Exemplo: Escreva um email profissional recusando uma proposta de emprego de forma educada."
           />
         </div>
+        
         <div className="prompt-container">
           <div className="prompt-header">
-            <h2>Improved Prompt (Visual Diff)</h2>
+            <h2>Prompt Otimizado</h2>
             {improvedPrompt && (
-              <button className="copy-button" onClick={() => handleCopy(improvedPrompt, 'Improved prompt copied!')}>
-                Copy
+              <button className="copy-button" onClick={() => handleCopy(improvedPrompt, 'Copiado!')}>
+                📋 Copiar
               </button>
             )}
           </div>
@@ -121,16 +124,17 @@ function MainPage() {
       </main>
 
       <div className="button-container">
-        <button onClick={handleImprovePrompt} disabled={isLoading || !originalPrompt}>
-          {isLoading ? 'Improving...' : 'Improve Prompt'}
+        <button onClick={handleImprovePrompt} disabled={isLoading || !originalPrompt.trim()}>
+          {isLoading ? '⏳ Otimizando...' : '✨ Otimizar Prompt'}
         </button>
+        
         {improvedPrompt && (
           <>
-            <button onClick={() => handleCopy(improvedPrompt, 'Improved prompt copied!')}>
-              Copy Improved Prompt
+            <button onClick={() => handleCopy(improvedPrompt, 'Prompt otimizado copiado!')}>
+              📋 Copiar Resultado
             </button>
             <button onClick={handleShare} disabled={isLoading} className="share-button">
-              Share
+              🔗 Compartilhar
             </button>
           </>
         )}
@@ -138,17 +142,17 @@ function MainPage() {
 
       {shareableLink && (
         <div className="shareable-link-section">
-          <h3>Share this link:</h3>
+          <h3>Compartilhe este link:</h3>
           <input type="text" readOnly value={shareableLink} />
-          <button onClick={() => handleCopy(shareableLink, 'Link copied to clipboard!')}>
-            Copy
+          <button onClick={() => handleCopy(shareableLink, 'Link copiado!')}>
+            📋 Copiar
           </button>
           {!isPublished ? (
             <button onClick={handlePublish} disabled={isLoading}>
-              Publish to Gallery
+              🌍 Publicar na Galeria
             </button>
           ) : (
-            <span>Published!</span>
+            <span>Publicado!</span>
           )}
         </div>
       )}

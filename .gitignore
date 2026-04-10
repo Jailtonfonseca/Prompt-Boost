@@ -127,3 +127,5 @@ dmypy.json
 # Environments
 backend/venv/
 frontend/node_modules/
+backend/*.db
+!backend/.env.example

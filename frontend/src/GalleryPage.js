@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './App.css';
 import './GalleryPage.css';
 
@@ -7,15 +7,16 @@ const GalleryPage = () => {
   const [prompts, setPrompts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGallery = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost:8000/api/gallery');
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:8000/api'}/gallery`);
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.detail || 'Failed to fetch gallery.');
+          throw new Error(errorData.detail || 'Falha ao carregar galeria.');
         }
         const data = await response.json();
         setPrompts(data.prompts);
@@ -29,30 +30,57 @@ const GalleryPage = () => {
     fetchGallery();
   }, []);
 
+  const handleCardClick = (promptId) => {
+    navigate(`/prompt/${promptId}`);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Public Prompt Gallery</h1>
-        <p>Explore prompts shared by the community.</p>
+        <h1>Galeria de Prompts</h1>
+        <p>Explore prompts compartilhados pela comunidade</p>
         <nav>
-          <Link to="/">Home</Link>
+          <Link to="/">← Voltar ao Início</Link>
         </nav>
       </header>
 
-      {isLoading && <h1>Loading gallery...</h1>}
       {error && <div className="error-message">{error}</div>}
 
-      <div className="gallery-grid">
-        {prompts.map(prompt => (
-          <div key={prompt.id} className="gallery-item">
-            <h3>Original Prompt</h3>
-            <p className="prompt-text">{prompt.original_prompt}</p>
-            <Link to={`/prompt/${prompt.id}`}>
-              <button>View Details</button>
+      {isLoading ? (
+        <div className="gallery-container">
+          <div className="loading-spinner">
+            <div className="spinner"></div>
+            <span>Carregando galeria...</span>
+          </div>
+        </div>
+      ) : prompts.length === 0 ? (
+        <div className="gallery-container">
+          <div className="empty-state">
+            <span>📭</span>
+            <h2>Nenhum prompt publicado ainda</h2>
+            <p>Seja o primeiro a compartilhar um prompt!</p>
+            <Link to="/">
+              <button>Criar Prompt</button>
             </Link>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div className="gallery-grid">
+          {prompts.map(prompt => (
+            <div 
+              key={prompt.id} 
+              className="gallery-card"
+              onClick={() => handleCardClick(prompt.id)}
+            >
+              <h3>Prompt Original</h3>
+              <p>{prompt.original_prompt}</p>
+              <div className="date">
+                🎯 Ver detalhes →
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,17 +1,24 @@
 import React from 'react';
-import { diff_match_patch, DIFF_DELETE, DIFF_INSERT, DIFF_EQUAL } from 'diff-match-patch';
+import { diff_match_patch, DIFF_DELETE, DIFF_INSERT } from 'diff-match-patch';
 import './DiffDisplay.css';
-import './LoadingSpinner.css'; // Import the new CSS for the spinner
-
-const LoadingSpinner = () => (
-  <div className="loading-spinner">
-    <div className="spinner"></div>
-  </div>
-);
+import './LoadingSpinner.css';
 
 const DiffDisplay = ({ text1, text2, isLoading }) => {
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="loading-spinner">
+        <div className="spinner"></div>
+        <span>Otimizando seu prompt...</span>
+      </div>
+    );
+  }
+
+  if (!text2) {
+    return (
+      <div className="diff-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontFamily: 'inherit', fontSize: '0.95rem' }}>
+        O resultado aparecerá aqui após a otimização
+      </div>
+    );
   }
 
   const dmp = new diff_match_patch();
@@ -31,7 +38,6 @@ const DiffDisplay = ({ text1, text2, isLoading }) => {
     }
   });
 
-  // If there's no difference, show the original text.
   if (display.length === 0 || (display.length === 1 && display[0].props.children === '')) {
       return <div className="diff-container">{text1}</div>
   }
