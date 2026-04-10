@@ -2,7 +2,7 @@
 RecursionRouter - Dispatcher for selecting and executing reasoning engines
 """
 
-from typing import Type
+from typing import Dict, List, Optional, Type
 
 from src.engines.alignment import AlignmentEngine
 from src.engines.autoformal import AutoFormalEngine
@@ -22,7 +22,7 @@ class RecursionRouter:
     """
 
     # Technique -> Engine mapping
-    ENGINES: dict[str, Type[RecursiveThinkingEngine]] = {
+    ENGINES: Dict[str, Type[RecursiveThinkingEngine]] = {
         "self_refine": SelfRefineEngine,
         "tree_of_thoughts": TreeOfThoughtsEngine,
         "graph_of_thoughts": GraphOfThoughtsEngine,
@@ -54,7 +54,7 @@ class RecursionRouter:
         return cls.ENGINES[technique]
 
     @classmethod
-    def list_techniques(cls) -> list[str]:
+    def list_techniques(cls) -> List[str]:
         """Get list of available techniques."""
         return list(cls.ENGINES.keys())
 
@@ -63,7 +63,7 @@ class RecursionRouter:
         cls,
         technique: str,
         prompt: str,
-        config: EngineConfig | None = None,
+        config: Optional[EngineConfig] = None,
     ) -> EngineResult:
         """
         Execute reasoning engine for a technique.
@@ -88,10 +88,10 @@ class RecursionRouter:
     @classmethod
     async def execute_multi(
         cls,
-        techniques: list[str],
+        techniques: List[str],
         prompt: str,
-        config: EngineConfig | None = None,
-    ) -> dict[str, EngineResult]:
+        config: Optional[EngineConfig] = None,
+    ) -> Dict[str, EngineResult]:
         """
         Execute multiple techniques in parallel.
         

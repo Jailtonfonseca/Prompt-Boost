@@ -189,7 +189,7 @@ class TestEngineExecution:
         assert isinstance(result.final_answer, str)
         assert len(result.iterations) > 0
         assert result.total_tokens_used >= 0
-        assert result.execution_time_ms > 0
+        assert result.execution_time_ms >= 0  # Can be 0 in mock execution
 
     @pytest.mark.asyncio
     async def test_tree_of_thoughts_full_execution(self):
