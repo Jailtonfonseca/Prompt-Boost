@@ -1,70 +1,242 @@
-# Getting Started with Create React App
+# Prompt-Boost Frontend v2.0
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React frontend para a plataforma de raciocínio recursivo **Prompt-Boost**.
 
-## Available Scripts
+> Transforme seus prompts com 7 técnicas avançadas de raciocínio LLM em tempo real.
 
-In the project directory, you can run:
+## 📚 Documentação
 
-### `npm start`
+### 📖 [Documentação Técnica Completa](./docs/INDEX.md)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+Leia a documentação em ordem:
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+1. **[00-ARQUITETURA-FRONTEND.md](./docs/00-ARQUITETURA-FRONTEND.md)** - Visão geral da arquitetura
+2. **[01-COMPONENTES-PRINCIPAIS.md](./docs/01-COMPONENTES-PRINCIPAIS.md)** - Specs de componentes React
+3. **[02-INTEGRACAO-WEBSOCKET.md](./docs/02-INTEGRACAO-WEBSOCKET.md)** - WebSocket em tempo real
+4. **[03-FLUXO-DE-USUARIO.md](./docs/03-FLUXO-DE-USUARIO.md)** - UX/Wireframes
+5. **[04-ESTADO-GLOBAL-E-HOOKS.md](./docs/04-ESTADO-GLOBAL-E-HOOKS.md)** - State management
+6. **[05-CASOS-DE-USO-FRONTEND.md](./docs/05-CASOS-DE-USO-FRONTEND.md)** - Exemplos práticos
 
-### `npm test`
+## 🚀 Quick Start
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Instalação
 
-### `npm run build`
+```bash
+npm install
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Dependências Principais
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```json
+{
+  "react": "^19.1.1",
+  "zustand": "^4.4.0",
+  "axios": "^1.6.0",
+  "ws": "^8.13.0",
+  "react-markdown": "^9.0.0",
+  "recharts": "^2.10.0"
+}
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Desenvolvimento
 
-### `npm run eject`
+```bash
+npm start
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Abre [http://localhost:3000](http://localhost:3000)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Build para Produção
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+npm run build
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Testes
 
-## Learn More
+```bash
+npm test
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🏗️ Arquitetura
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+```
+src/
+├── components/          # Componentes React
+│   ├── MainPage.js
+│   ├── RecursiveOptions/
+│   ├── Results/
+│   └── Common/
+│
+├── hooks/              # Custom hooks
+│   ├── useRecursiveThinking.js
+│   ├── useWebSocket.js
+│   ├── useStreamingResult.js
+│   └── useAsync.js
+│
+├── store/              # Estado (Zustand)
+│   ├── recursionStore.js
+│   └── uiStore.js
+│
+├── api/                # Clientes HTTP/WebSocket
+│   ├── api.js
+│   ├── websocketClient.js
+│   └── recursiveApi.js
+│
+├── styles/             # Estilos globais
+│   └── variables.css
+│
+└── utils/              # Utilidades
+    ├── constants.js
+    ├── formatters.js
+    └── validators.js
+```
 
-### Code Splitting
+## 🧠 Técnicas Suportadas
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. **Self-Refine** 🔄 - Melhoria iterativa via crítica
+2. **Tree of Thoughts** 🌳 - Exploração em árvore
+3. **Graph of Thoughts** 🕸️ - Exploração em grafo
+4. **LLM-MCTS** 🎲 - Monte Carlo Tree Search
+5. **Multi-Agent Debate** 🗣️ - Múltiplos agentes
+6. **Recursive Alignment** ✓ - Verificação formal
+7. **AutoFormalization** 📐 - Prova formal (Lean4)
 
-### Analyzing the Bundle Size
+## 🔌 Integração com Backend
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### URL Base
+```javascript
+// Configurar em .env
+REACT_APP_API_URL=http://localhost:8000
+REACT_APP_WS_URL=ws://localhost:8000
+```
 
-### Making a Progressive Web App
+### Endpoints Esperados
+```
+POST /api/improve-prompt-recursive
+WS  /ws/recursive
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Veja [02-INTEGRACAO-WEBSOCKET.md](./docs/02-INTEGRACAO-WEBSOCKET.md) para formatos de mensagem.
 
-### Advanced Configuration
+## 🎨 Design System
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Cores
+```css
+--color-primary: #0066cc;
+--color-success: #28a745;
+--color-warning: #ffc107;
+--color-error: #dc3545;
+```
 
-### Deployment
+Veja [00-ARQUITETURA-FRONTEND.md](./docs/00-ARQUITETURA-FRONTEND.md#-design-system) para tokens completos.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## ♿ Acessibilidade
 
-### `npm run build` fails to minify
+- WCAG 2.1 AA compliance
+- Keyboard navigation completa
+- Screen reader support
+- High contrast mode
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Veja [03-FLUXO-DE-USUARIO.md](./docs/03-FLUXO-DE-USUARIO.md#-acessibilidade) para detalhes.
+
+## 📊 State Management
+
+### Zustand Stores
+
+```javascript
+import { useRecursionStore, useUIStore } from './store';
+
+const store = useRecursionStore();
+const ui = useUIStore();
+```
+
+Veja [04-ESTADO-GLOBAL-E-HOOKS.md](./docs/04-ESTADO-GLOBAL-E-HOOKS.md) para exemplos completos.
+
+## 🪝 Custom Hooks
+
+```javascript
+import { useRecursiveThinking } from './hooks';
+import { useWebSocket } from './hooks';
+import { useStreamingResult } from './hooks';
+
+const { improve, cancel, result, status } = useRecursiveThinking();
+```
+
+## 🧪 Testing
+
+```bash
+npm test -- --coverage
+```
+
+Estrutura de testes:
+```
+src/__tests__/
+├── hooks/
+├── components/
+└── utils/
+```
+
+## 📈 Performance
+
+- Code splitting com React.lazy()
+- Memoização com React.memo()
+- Lazy loading de componentes pesados
+- Virtual scrolling para listas grandes
+
+Veja [00-ARQUITETURA-FRONTEND.md](./docs/00-ARQUITETURA-FRONTEND.md#-arquitetura-de-componentes) para detalhes.
+
+## 🐛 Troubleshooting
+
+### WebSocket não conecta
+1. Verifique `REACT_APP_WS_URL` no .env
+2. Confirme backend está rodando em `ws://localhost:8000`
+3. Verifique logs do navegador (DevTools)
+
+### Estado não persiste
+- Verifique localStorage está habilitado
+- Limpe cache: `localStorage.clear()`
+
+### Componentes lentos
+- Abra DevTools → Performance
+- Verifique re-renders desnecessários
+- Use React Profiler
+
+## 📱 Responsividade
+
+Testado em:
+- Desktop (1920px+)
+- Tablet (768px - 1199px)
+- Mobile (<768px)
+
+Veja [03-FLUXO-DE-USUARIO.md](./docs/03-FLUXO-DE-USUARIO.md#-responsividade-desktop--mobile) para detalhes.
+
+## 🔗 Links Úteis
+
+- [Documentação Técnica](./docs/INDEX.md)
+- [Backend Documentation](../docs/09-IMPLEMENTACAO-PRATICA.md)
+- [React Documentation](https://react.dev)
+- [Zustand Docs](https://github.com/pmndrs/zustand)
+
+## 📝 Changelog
+
+### v2.0.0
+- ✅ Documentação completa (6 arquivos)
+- ✅ Componentes React com specs
+- ✅ WebSocket integration
+- ✅ Zustand state management
+- ✅ Custom hooks
+- ✅ 7 casos de uso práticos
+
+## 📄 Licença
+
+MIT
+
+## 👥 Contribuições
+
+Veja [CONTRIBUTING.md](../CONTRIBUTING.md) para diretrizes.
+
+---
+
+**Última Atualização**: Abril 2026  
+**Status**: ✅ Pronto para Implementação
