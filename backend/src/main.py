@@ -13,6 +13,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_late
 
 from src.config import settings
 from src.utils.logger import setup_logging
+from src.api import recursion_router, websocket_router
 
 
 # Prometheus metrics
@@ -80,6 +81,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(recursion_router)
+app.include_router(websocket_router)
 
 
 @app.get("/")
