@@ -1,42 +1,68 @@
 # Prompt-Boost
 
-![Version](https://img.shields.io/badge/version-1.2.0-blue)
-![License](https://img.shields.io/badge/license-GPL--3.0-green)
-![Python](https://img.shields.io/badge/python-3.9+-yellow)
-![React](https://img.shields.io/badge/react-19.x-orange)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue)](https://github.com/Jailtonfonseca/Prompt-Boost/releases)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.9+-yellow)](https://www.python.org/)
+[![React](https://img.shields.io/badge/react-19.x-orange)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/docker-24.x-2496ed)](https://www.docker.com/)
 
-**Prompt-Boost** é uma ferramenta web full-stack para otimização de prompts para LLMs. Insira um prompt bruto e receba uma versão melhorada, mais clara e eficaz.
+**Prompt-Boost** é uma ferramenta web full-stack para otimização de prompts para LLMs. Insira um prompt bruto e receba uma versão melhorada, mais clara e eficaz using técnicas avançadas de pensamento recursivo.
 
 ![Demo](docs/demo.gif)
 
 ## Funcionalidades
 
-- ✨ **Otimização de Prompts**: Melhora prompts usando GPT-4o
-- 📊 **Diff Visual**: Compare lado a lado o prompt original vs melhorado
-- 🌐 **Galeria Pública**: Compartilhe e descubra prompts da comunidade
-- 🔒 **Seguro**: API Key nunca sai do seu navegador
-- 📱 **Responsivo**: Interface moderna e adaptável
+- **Multi-Provedor**: Suporte a OpenAI, Google Gemini, xAI Grok, OpenRouter e Groq
+- **Técnicas Recursivas**: Self-Refine e Tree of Thoughts (ToT)
+- **Iterações Configuráveis**: Determine quantas vezes o prompt deve ser refinado
+- **Provedor de Crítica**: Use um modelo separado para avaliar melhorias
+- **Diff Visual**: Compare lado a lado o prompt original vs melhorado
+- **System Prompt Customizável**: Defina seu próprio contexto de atuação
+- **Seguro**: API Keys permanecem no seu servidor
+- **Responsivo**: Interface moderna e adaptável
 
 ## Stack Tecnológica
 
 ### Backend
-- **FastAPI** - Framework web assíncrono
-- **OpenAI SDK** - Integração com GPT-4o
+- **FastAPI** - Framework web assíncrono de alta performance
+- **OpenAI SDK** - Integração com modelos GPT
+- **Google Generative AI** - Integração com Gemini
+- **xAI SDK** - Integração com Grok
 - **SQLite** - Banco de dados local
 - **Pydantic** - Validação de dados
 
 ### Frontend
-- **React 19** - Biblioteca de UI
+- **React 19** - Biblioteca de UI moderna
 - **React Router** - Navegação SPA
 - **diff-match-patch** - Renderização de diffs
 
+## Provedores Suportados
+
+| Provedor | Modelo Padrão | native Models |
+|---------|--------------|-------------|
+| **OpenAI** | gpt-4o | gpt-4o, gpt-4o-mini, gpt-4-turbo, o1-preview |
+| **Google Gemini** | gemini-2.0-flash | gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash |
+| **xAI Grok** | grok-2 | grok-2, grok-2-vision-1212, grok-beta |
+| **OpenRouter** | openai/gpt-4o | openai/gpt-4o, claude-3.5-sonnet, llama-3.1-405b |
+| **Groq** | llama-3.1-70b-versatile | llama-3.1-70b-versatile, mixtral-8x7b-32768 |
+
+## Técnicas Recursivas
+
+### Self-Refine
+O **Self-Refine** itera o prompt através de ciclos de geração e crítica:
+1. Gera uma versão melhorada do prompt
+2. Usa um modelo de crítica para avaliar
+3. Refina baseado no feedback
+4. Repete pelo número de iterações configurado
+
+### Tree of Thoughts (ToT)
+O **ToT** explora múltiplos caminhos de pensamento:
+1. Gera várias abordagens alternativas
+2. Avalia cada ramificação
+3. Seleciona a melhor via
+4. Repete para refinar
+
 ## Instalação
-
-### Pré-requisitos
-
-- Python 3.9+
-- Node.js 18+
-- Chave de API OpenAI (opcional para uso local)
 
 ### Clone o Repositório
 
@@ -45,90 +71,167 @@ git clone https://github.com/Jailtonfonseca/Prompt-Boost.git
 cd Prompt-Boost
 ```
 
-### Backend
+### Configuração Docker (Recomendado)
+
+```bash
+# Iniciar todos os serviços
+docker-compose up -d
+
+# Verificar logs
+docker-compose logs -f
+
+# Parar serviços
+docker-compose down
+```
+
+Os serviços estarán disponíveis em:
+- **Frontend**: http://localhost:3000
+- **Backend**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+
+### Instalação Manual
+
+#### Pré-requisitos
+
+- Python 3.9+
+- Node.js 18+
+
+#### Backend
 
 ```bash
 cd backend
 
-# Crie um ambiente virtual
+# Criar ambiente virtual
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# or
-.\venv\Scripts\activate   # Windows
+# .\venv\Scripts\activate   # Windows
 
-# Instale as dependências
+# Instalar dependências
 pip install -r requirements.txt
 
-# Configure as variáveis de ambiente
-cp .env.example .env
-# Edite .env e adicione sua OPENAI_API_KEY
-
-# Inicie o servidor
+# Iniciar servidor
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+#### Frontend
 
 ```bash
 cd frontend
 
-# Instale as dependências
+# Instalar dependências
 npm install
 
-# Inicie o servidor de desenvolvimento
+# Iniciar servidor
 npm start
 ```
 
-O frontend estará disponível em `http://localhost:3000` e se conectará ao backend em `http://localhost:8000`.
+O frontend estará disponível em `http://localhost:3000`.
 
-## Variáveis de Ambiente
+## Configuração
 
-### Backend (`backend/.env`)
+### Via Interface Web
 
-| Variável | Descrição | Obrigatório |
-|----------|-----------|-------------|
-| `OPENAI_API_KEY` | Chave da API OpenAI | Sim (para uso local) |
-| `CORS_ORIGINS` | Origins permitidos para CORS (separados por vírgula) | Não |
-| `DATABASE_URL` | Caminho do banco SQLite | Não |
+1. Acesse http://localhost:3000
+2. Clique no ícone de configurações (⚙️)
+3. Selecione o provedorprincipal
+4. Cole sua API Key
+5. Clique em "Testar" para verificar
+6. Save as configurações
 
-### Frontend
+### Adicionar Provedor de Crítica (Self-Refine)
 
-O frontend não requer configuração de variáveis de ambiente para uso básico.
+Para usar técnicas Self-Refine com dois modelos:
+
+1. Nas configurações, configure o **Provedor Principal**
+2. Selecione "custom" em provedor de crítica
+3. Configure um segundo provedor/API key
+4. A técnica usará o provedor principal para gerar e o de crítica para avaliar
+
+### Variáveis de Configuração
+
+| Variável | Descrição | Padrão |
+|----------|----------|--------|
+| CORS_ORIGINS | Origins permitidos (vírgula) | http://localhost:3000 |
+| RATE_LIMIT | Requisições por minuto | 30 |
+| TEMPERATURE | Temperatura do modelo | 0.7 |
+| MAX_TOKENS | Tokens máximos de saída | 2000 |
+| RECURSION_TECHNIQUE | Técnica: none/self-refine/tot | none |
+| RECURSION_ITERATIONS | Iterações (2-5) | 3 |
 
 ## Uso
 
-1. **Otimizar um Prompt**: Insira seu prompt no campo de texto e clique em "Melhorar"
-2. **Ver o Diff**: Analise as alterações feitas pelo GPT-4o
-3. **Compartilhar**: Salve o par de prompts para compartilhar
-4. **Galeria**: Navegue pelos prompts públicos da comunidade
+### Via Interface
+
+1. Insira seu prompt no campo de texto
+2. Selecione a técnica recursiva (opcional)
+3. Clique em "Melhorar"
+4. Analise as alterações no diff
+5. Copie o prompt mejorado
+
+### Via API REST
+
+```bash
+# Melhora um prompt
+curl -X POST http://localhost:8000/api/improve-prompt \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Write a function to add two numbers"}'
+
+# Lista provedores disponíveis
+curl http://localhost:8000/api/providers
+
+# Testa conexão com provedor
+curl -X POST http://localhost:8000/api/config/test-provider \
+  -H "Content-Type: application/json" \
+  -d '{"provider_type": "openai", "api_key": "sk-...", "model": "gpt-4o"}'
+```
+
+### Documentação Interativa
+
+Acesse http://localhost:8000/docs para Swagger UI.
 
 ## API Endpoints
 
 | Método | Endpoint | Descrição |
 |--------|----------|-----------|
-| `GET` | `/` | Status da API |
-| `POST` | `/api/improve-prompt` | Melhora um prompt |
-| `POST` | `/api/prompts` | Salva um par de prompts |
-| `GET` | `/api/prompts/{id}` | Recupera um prompt pelo ID |
-| `POST` | `/api/prompts/{id}/publish` | Publica um prompt na galeria |
-| `GET` | `/api/gallery` | Lista todos os prompts públicos |
+| GET | `/` | Status da API |
+| GET | `/api/providers` | Lista provedores e modelos |
+| GET | `/api/config` | Retorna configuração atual |
+| POST | `/api/config` | Salva configuração |
+| POST | `/api/config/test-provider` | Testa conexão com provedor |
+| POST | `/api/improve-prompt` | Melhora um prompt |
+| POST | `/api/prompts` | Salva um par de prompts |
+| GET | `/api/prompts/{id}` | Recupera prompt pelo ID |
+| POST | `/api/prompts/{id}/publish` | Publica na galeria |
+| GET | `/api/gallery` | Lista prompts públicos |
 
-### Documentação Interativa
+## Estrutura do Projeto
 
-Acesse `http://localhost:8000/docs` para a documentação Swagger UI.
+```
+Prompt-Boost/
+├── backend/
+│   ├── main.py              # API FastAPI
+│   ├── providers.py          # Abstração de provedores
+│   ├── recursion.py          # Técnicas Self-Refine e ToT
+│   ├── database.py           # Operações SQLite
+│   ├── requirements.txt     # Dependências Python
+│   └── .env                 # Configuração (runtime)
+├── frontend/
+│   ├── src/
+│   │   ├── api.js           # Cliente API
+│   │   ├── App.js           # Componente raiz
+│   │   ├── MainPage.js      # Página principal
+│   │   ├── SettingsPage.js  # Página de configurações
+│   │   ├── GalleryPage.js  # Galeria
+│   │   └── DiffDisplay.js   # Componente de diff
+│   ├── public/
+│   └── package.json
+├── docs/                    # Documentação
+├── docker-compose.yml       # Configuração Docker
+├── CHANGELOG.md           # Histórico de versões
+└── README.md              # Este arquivo
+```
 
 ## Desenvolvimento
-
-### Executar com Docker
-
-```bash
-# Backend apenas
-docker build -t prompt-boost-backend ./backend
-docker run -p 8000:8000 --env-file backend/.env prompt-boost-backend
-
-# Ou use docker-compose (se disponível)
-docker-compose up
-```
 
 ### Executar Testes
 
@@ -142,61 +245,61 @@ cd frontend
 npm test
 ```
 
-## Estrutura do Projeto
+### Builds Customizados
 
+```bash
+# Build apenas backend
+docker build -t prompt-boost-backend ./backend
+
+# Build apenas frontend
+docker build -t prompt-boost-frontend ./frontend
 ```
-Prompt-Boost/
-├── backend/
-│   ├── main.py           # API FastAPI
-│   ├── database.py       # Operações SQLite
-│   ├── requirements.txt  # Dependências Python
-│   └── .env.example      # Template de configuração
-├── frontend/
-│   ├── src/
-│   │   ├── api.js        # Cliente da API
-│   │   ├── App.js        # Componente principal
-│   │   ├── MainPage.js   # Página principal
-│   │   ├── GalleryPage.js # Galeria de prompts
-│   │   └── DiffDisplay.js # Componente de diff
-│   ├── public/
-│   └── package.json
-├── docs/                 # Documentação adicional
-├── .gitignore
-├── LICENSE
-└── README.md
+
+## Troubleshooting
+
+### Erro 429 (Too Many Requests)
+O rate limit está configurado para 30 req/min. Aguarde ou ajuste em configurações.
+
+### API Key Inválida
+Verifique se:
+- A chave está correta
+- Tem créditos disponíveis
+- O modelo selecionado existe
+
+### CORS Error
+Certifique-se que o backend está rodando e o frontend usa a URL correta da API.
+
+### Container não inicia
+```bash
+# Verificar logs
+docker-compose logs backend
+
+# Rebuild
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
 ## Contribuição
 
-Contribuições são bem-vindas! Por favor, leia [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
+Contribuições são bem-vindas! Leia [CONTRIBUTING.md](CONTRIBUTING.md) para detalhes.
 
 1. Fork o repositório
-2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
-3. Commit suas mudanças (`git commit -m 'Add nova funcionalidade'`)
-4. Push para a branch (`git push origin feature/nova-funcionalidade`)
+2. Crie uma branch (`git checkout -b feature/nova`)
+3. Commit suas mudanças (`git commit -m 'Add feature'`)
+4. Push para a branch (`git push origin feature/nova`)
 5. Abra um Pull Request
 
 ## Changelog
 
-Veja [CHANGELOG.md](CHANGELOG.md) para o histórico de versões.
+Veja [CHANGELOG.md](CHANGELOG.md) para o histórico completo de versões.
 
 ## Licença
 
-Este projeto está sob a licença GPL-3.0. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+Este projeto está sob a licença GPL-3.0. Veja [LICENSE](LICENSE) para detalhes.
 
 ## Créditos
 
 Desenvolvido por [Jailton Fonseca](https://github.com/Jailtonfonseca).
-
-## Troubleshooting
-
-### Erro de CORS
-
-Se você receber erros de CORS, certifique-se de que o backend está rodando e o frontend está configurado para usar a URL correta da API.
-
-### API Key Inválida
-
-Verifique se sua chave da API OpenAI está correta e tem créditos disponíveis.
 
 ---
 

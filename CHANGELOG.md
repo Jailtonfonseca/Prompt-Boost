@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.4.0] - 2026-04-10
 
 ### Added
+- Multi-provider support: OpenAI, Google Gemini, xAI Grok, OpenRouter, Groq
+- Recursive thinking techniques: Self-Refine, Tree of Thoughts (ToT)
+- Configurable iterations (2-5) per technique
+- Separate provider for critique (Self-Refine)
+- Editable system prompt
+- Show iterations toggle
+- Backend: providers.py, recursion.py modules
+- Updated README with full documentation
+
+### Changed
+- Backend version to 1.4.0
+- Completely redesigned config system
+- SettingsPage UI with provider configuration
+
+### Added
 - Multi-provider support: OpenAI, Google Gemini, xAI Grok, OpenRouter
 - Recursive thinking techniques: Self-Refine, Tree of Thoughts (ToT)
 - Configurable iterations (2-5) per technique
