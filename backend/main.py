@@ -1,17 +1,18 @@
 import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
-import openai
-from decouple import config
 from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
 import database
 import time
 from collections import defaultdict
 from typing import Dict
 from pathlib import Path
+import json
+
+from providers import create_provider, PROVIDER_MODELS, BaseProvider
+import recursion
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQUESTS = 30
@@ -22,12 +23,23 @@ APP_DIR = Path(__file__).parent
 CONFIG_FILE = APP_DIR / ".env"
 
 CONFIG_DEFAULTS = {
-    "OPENAI_API_KEY": "",
     "CORS_ORIGINS": "http://localhost:3000",
     "RATE_LIMIT": "30",
-    "MODEL": "gpt-4o",
     "TEMPERATURE": "0.7",
-    "MAX_TOKENS": "2000"
+    "MAX_TOKENS": "2000",
+    "RECURSION_TECHNIQUE": "none",
+    "RECURSION_ITERATIONS": "3",
+    "RECURSION_SHOW_ITERATIONS": "true",
+    "SYSTEM_PROMPT": recursion.DEFAULT_SYSTEM_PROMPT,
+    "PROVIDER_MAIN": "",
+    "PROVIDER_CRITIQUE": ""
+}
+
+PROVIDER_CONFIG_DEFAULTS = {
+    "provider_type": "openai",
+    "model": "gpt-4o",
+    "api_key": "",
+    "base_url": ""
 }
 
 def load_config() -> dict:
@@ -47,6 +59,21 @@ def save_config(config_data: dict):
         for key, value in config_data.items():
             if value:
                 f.write(f"{key}={value}\n")
+
+def load_provider_config(prefix: str) -> dict:
+    cfg = load_config()
+    return {
+        "provider_type": cfg.get(f"{prefix}_PROVIDER_TYPE", "openai"),
+        "model": cfg.get(f"{prefix}_MODEL", "gpt-4o"),
+        "api_key": cfg.get(f"{prefix}_API_KEY", ""),
+        "base_url": cfg.get(f"{prefix}_BASE_URL", "")
+    }
+
+def save_provider_config(prefix: str, provider_cfg: dict):
+    cfg = load_config()
+    for key, value in provider_cfg.items():
+        cfg[f"{prefix}_{key.upper()}"] = value
+    save_config(cfg)
 
 def check_rate_limit(client_ip: str) -> bool:
     global RATE_LIMIT_MAX_REQUESTS
@@ -70,8 +97,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Prompt-Boost API",
-    description="API para melhorar prompts usando IA.",
-    version="1.2.0",
+    description="API para melhorar prompts usando técnicas de pensamento recursivo.",
+    version="1.3.0",
     lifespan=lifespan
 )
 
@@ -101,6 +128,9 @@ class PromptRequest(BaseModel):
 class ImprovedPromptResponse(BaseModel):
     original_prompt: str
     improved_prompt: str
+    technique: str = "none"
+    iterations: int = 1
+    history: Optional[List[Dict]] = None
 
 class ShareRequest(BaseModel):
     original_prompt: str
@@ -129,87 +159,126 @@ class GalleryItem(BaseModel):
 class GalleryResponse(BaseModel):
     prompts: List[GalleryItem]
 
+class ProviderConfigModel(BaseModel):
+    provider_type: str = "openai"
+    model: str = "gpt-4o"
+    api_key: str = ""
+    base_url: Optional[str] = ""
+
 class ConfigUpdate(BaseModel):
-    openai_api_key: Optional[str] = None
     cors_origins: Optional[str] = None
     rate_limit: Optional[int] = None
-    model: Optional[str] = None
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
+    recursion_technique: Optional[str] = None
+    recursion_iterations: Optional[int] = None
+    recursion_show_iterations: Optional[bool] = None
+    system_prompt: Optional[str] = None
+    provider_main: Optional[ProviderConfigModel] = None
+    provider_critique: Optional[ProviderConfigModel] = None
 
 class ConfigResponse(BaseModel):
     cors_origins: str
     rate_limit: int
-    model: str
     temperature: float
     max_tokens: int
-    api_key_configured: bool
+    recursion_technique: str
+    recursion_iterations: int
+    recursion_show_iterations: bool
+    system_prompt: str
+    provider_main: ProviderConfigModel
+    provider_critique: Optional[ProviderConfigModel] = None
 
-class TestApiKeyRequest(BaseModel):
+class TestProviderRequest(BaseModel):
+    provider_type: str
     api_key: str
+    model: str
+    base_url: Optional[str] = None
 
-class TestApiKeyResponse(BaseModel):
+class TestProviderResponse(BaseModel):
     success: bool
     message: str
-    model: Optional[str] = None
+    models: Optional[List[str]] = None
 
 @app.get("/")
 def read_root():
-    return {"status": "API is running", "version": "1.2.0"}
+    return {"status": "API is running", "version": "1.3.0"}
+
+@app.get("/api/providers")
+async def get_providers():
+    return PROVIDER_MODELS
+
+@app.post("/api/config/test-provider", response_model=TestProviderResponse)
+async def test_provider(request: TestProviderRequest):
+    try:
+        provider = create_provider(
+            request.provider_type,
+            request.api_key,
+            request.model,
+            request.base_url
+        )
+        result = provider.test_connection()
+        models = provider.list_models()
+        return TestProviderResponse(
+            success=result["success"],
+            message=result["message"],
+            models=models[:10]
+        )
+    except Exception as e:
+        return TestProviderResponse(
+            success=False,
+            message=f"Erro: {str(e)}"
+        )
 
 @app.get("/api/config", response_model=ConfigResponse)
 async def get_config():
     cfg = load_config()
+    main_cfg = load_provider_config("MAIN")
+    critique_cfg = load_provider_config("CRITIQUE")
+    
     return ConfigResponse(
         cors_origins=cfg.get("CORS_ORIGINS", "http://localhost:3000"),
         rate_limit=int(cfg.get("RATE_LIMIT", 30)),
-        model=cfg.get("MODEL", "gpt-4o"),
         temperature=float(cfg.get("TEMPERATURE", 0.7)),
         max_tokens=int(cfg.get("MAX_TOKENS", 2000)),
-        api_key_configured=bool(cfg.get("OPENAI_API_KEY", ""))
+        recursion_technique=cfg.get("RECURSION_TECHNIQUE", "none"),
+        recursion_iterations=int(cfg.get("RECURSION_ITERATIONS", 3)),
+        recursion_show_iterations=cfg.get("RECURSION_SHOW_ITERATIONS", "true") == "true",
+        system_prompt=cfg.get("SYSTEM_PROMPT", recursion.DEFAULT_SYSTEM_PROMPT),
+        provider_main=ProviderConfigModel(**main_cfg),
+        provider_critique=ProviderConfigModel(**critique_cfg) if critique_cfg.get("api_key") else None
     )
 
 @app.post("/api/config")
 async def update_config(config_data: ConfigUpdate):
     cfg = load_config()
     
-    if config_data.openai_api_key is not None:
-        cfg["OPENAI_API_KEY"] = config_data.openai_api_key.strip()
     if config_data.cors_origins is not None:
         cfg["CORS_ORIGINS"] = config_data.cors_origins
     if config_data.rate_limit is not None:
         cfg["RATE_LIMIT"] = str(config_data.rate_limit)
-    if config_data.model is not None:
-        cfg["MODEL"] = config_data.model
     if config_data.temperature is not None:
         cfg["TEMPERATURE"] = str(config_data.temperature)
     if config_data.max_tokens is not None:
         cfg["MAX_TOKENS"] = str(config_data.max_tokens)
+    if config_data.recursion_technique is not None:
+        cfg["RECURSION_TECHNIQUE"] = config_data.recursion_technique
+    if config_data.recursion_iterations is not None:
+        cfg["RECURSION_ITERATIONS"] = str(config_data.recursion_iterations)
+    if config_data.recursion_show_iterations is not None:
+        cfg["RECURSION_SHOW_ITERATIONS"] = "true" if config_data.recursion_show_iterations else "false"
+    if config_data.system_prompt is not None:
+        cfg["SYSTEM_PROMPT"] = config_data.system_prompt
+    
+    if config_data.provider_main is not None:
+        save_provider_config("MAIN", config_data.provider_main.model_dump())
+    
+    if config_data.provider_critique is not None:
+        save_provider_config("CRITIQUE", config_data.provider_critique.model_dump())
     
     save_config(cfg)
     
     return {"success": True, "message": "Configurações salvas com sucesso!"}
-
-@app.post("/api/config/test", response_model=TestApiKeyResponse)
-async def test_api_key(request: TestApiKeyRequest):
-    if not request.api_key or not request.api_key.strip():
-        return TestApiKeyResponse(success=False, message="API key não fornecida.")
-    
-    try:
-        client = openai.OpenAI(api_key=request.api_key.strip())
-        response = client.models.list()
-        default_model = client.models.retrieve("gpt-4o")
-        return TestApiKeyResponse(
-            success=True,
-            message="Conexão bem-sucedida!",
-            model=default_model.id
-        )
-    except openai.AuthenticationError:
-        return TestApiKeyResponse(success=False, message="API key inválida.")
-    except openai.RateLimitError:
-        return TestApiKeyResponse(success=False, message="Rate limit excedido.")
-    except Exception as e:
-        return TestApiKeyResponse(success=False, message=f"Erro: {str(e)}")
 
 @app.post("/api/improve-prompt", response_model=ImprovedPromptResponse)
 async def improve_prompt(request: PromptRequest, req: Request):
@@ -218,48 +287,86 @@ async def improve_prompt(request: PromptRequest, req: Request):
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
 
     cfg = load_config()
-    api_key = cfg.get("OPENAI_API_KEY", "")
+    main_cfg = load_provider_config("MAIN")
     
-    if not api_key:
+    if not main_cfg.get("api_key"):
         raise HTTPException(
             status_code=500,
-            detail="OpenAI API key não configurada. Acesse Configurações para adicionar."
+            detail="API key não configurada. Configure um provedor em Configurações."
         )
-
+    
     try:
-        client = openai.OpenAI(api_key=api_key)
-
-        enhancement_instruction = (
-            "You are an expert prompt engineer. Refine the following user prompt to be more clear, "
-            "focused, and effective for an LLM. Preserve the original intent and key elements, "
-            "but enhance structure, specificity, and clarity. "
-            "Respond ONLY with the improved prompt, no explanations.\n\n"
-            "Original prompt:"
+        main_provider = create_provider(
+            main_cfg["provider_type"],
+            main_cfg["api_key"],
+            main_cfg["model"],
+            main_cfg.get("base_url")
         )
+        
+        technique = cfg.get("RECURSION_TECHNIQUE", "none")
+        iterations = int(cfg.get("RECURSION_ITERATIONS", 3))
+        system_prompt = cfg.get("SYSTEM_PROMPT", recursion.DEFAULT_SYSTEM_PROMPT)
+        
+        if technique == "self-refine":
+            critique_cfg = load_provider_config("CRITIQUE")
+            critique_provider = None
+            if critique_cfg.get("api_key"):
+                critique_provider = create_provider(
+                    critique_cfg["provider_type"],
+                    critique_cfg["api_key"],
+                    critique_cfg["model"],
+                    critique_cfg.get("base_url")
+                )
+            
+            result = recursion.self_refine_loop(
+                request.prompt,
+                main_provider,
+                iterations=iterations,
+                system_prompt=system_prompt,
+                critique_provider=critique_provider
+            )
+            
+            return ImprovedPromptResponse(
+                original_prompt=result["original"],
+                improved_prompt=result["final"],
+                technique="self-refine",
+                iterations=iterations,
+                history=result["history"]
+            )
+        
+        elif technique == "toT":
+            n_versions = min(iterations + 2, 5)
+            result = recursion.tree_of_thoughts(
+                request.prompt,
+                main_provider,
+                n_versions=n_versions,
+                system_prompt=system_prompt
+            )
+            
+            return ImprovedPromptResponse(
+                original_prompt=result["original"],
+                improved_prompt=result["final"],
+                technique="toT",
+                iterations=n_versions,
+                history=result.get("versions")
+            )
+        
+        else:
+            result = recursion.basic_improve(
+                request.prompt,
+                main_provider,
+                system_prompt=system_prompt
+            )
+            
+            return ImprovedPromptResponse(
+                original_prompt=result["original"],
+                improved_prompt=result["final"],
+                technique="none",
+                iterations=1
+            )
 
-        completion = client.chat.completions.create(
-            model=cfg.get("MODEL", "gpt-4o"),
-            messages=[
-                {"role": "system", "content": enhancement_instruction},
-                {"role": "user", "content": request.prompt}
-            ],
-            max_tokens=int(cfg.get("MAX_TOKENS", 2000)),
-            temperature=float(cfg.get("TEMPERATURE", 0.7))
-        )
-
-        improved_prompt_text = completion.choices[0].message.content.strip()
-
-        return ImprovedPromptResponse(
-            original_prompt=request.prompt,
-            improved_prompt=improved_prompt_text
-        )
-
-    except openai.AuthenticationError:
-        raise HTTPException(status_code=401, detail="API key da OpenAI inválida.")
-    except openai.RateLimitError:
-        raise HTTPException(status_code=429, detail="Rate limit da OpenAI excedido.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro inesperado: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
 
 @app.post("/api/prompts", response_model=ShareResponse)
 async def share_prompt(request: ShareRequest):

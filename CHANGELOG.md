@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-04-10
+
+### Added
+- Multi-provider support: OpenAI, Google Gemini, xAI Grok, OpenRouter
+- Recursive thinking techniques: Self-Refine, Tree of Thoughts (ToT)
+- Configurable iterations (2-5) per technique
+- Separate provider for critique (Self-Refine)
+- Editable system prompt
+- Show iterations toggle
+- Backend: providers.py, recursion.py modules
+
+### Changed
+- Backend version to 1.3.0
+- Completely redesigned config system
+- SettingsPage UI with provider configuration
+
 ## [1.3.0] - 2026-04-10
 
 ### Added

@@ -60,3 +60,17 @@ export const testApiKey = async (apiKey) => {
   });
   return handleResponse(response);
 };
+
+export const getProviders = async () => {
+  const response = await fetch(`${API_BASE_URL}/providers`);
+  return handleResponse(response);
+};
+
+export const testProvider = async (providerConfig) => {
+  const response = await fetch(`${API_BASE_URL}/config/test-provider`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(providerConfig),
+  });
+  return handleResponse(response);
+};
