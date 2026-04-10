@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-04-10
+
+### Added
+- Settings page for API configuration
+- Endpoints: GET/POST /api/config, POST /api/config/test
+- Support for: API Key, CORS Origins, Rate Limit, Model, Temperature, Max Tokens
+- Configuration stored in .env file (runtime updates)
+- Test API key functionality with visual feedback
+- Toggle to show/hide API key
+- Portuguese localization for settings page
+
+### Changed
+- API key now configured via settings page (not environment variable)
+- Backend version to 1.2.0
+- Updated docker-compose.yml (removed hardcoded environment variables)
+- Improved error messages in Portuguese
+
 ## [1.2.0] - 2026-04-10
 
 ### Added

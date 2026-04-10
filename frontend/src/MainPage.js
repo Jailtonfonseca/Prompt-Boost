@@ -94,6 +94,7 @@ function MainPage() {
         <h1>Prompt-Boost</h1>
         <p>Otimize seus prompts e obtenha melhores resultados da IA</p>
         <nav>
+          <Link to="/settings">⚙️ Configurações</Link>
           <Link to="/gallery">Ver Galeria</Link>
         </nav>
       </header>

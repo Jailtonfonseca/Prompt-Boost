@@ -41,6 +41,7 @@ const GalleryPage = () => {
         <p>Explore prompts compartilhados pela comunidade</p>
         <nav>
           <Link to="/">← Voltar ao Início</Link>
+          <Link to="/settings">⚙️ Configurações</Link>
         </nav>
       </header>
 

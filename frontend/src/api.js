@@ -37,3 +37,26 @@ export const publishPrompt = async (promptId) => {
   }
   return;
 };
+
+export const getConfig = async () => {
+  const response = await fetch(`${API_BASE_URL}/config`);
+  return handleResponse(response);
+};
+
+export const updateConfig = async (config) => {
+  const response = await fetch(`${API_BASE_URL}/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(config),
+  });
+  return handleResponse(response);
+};
+
+export const testApiKey = async (apiKey) => {
+  const response = await fetch(`${API_BASE_URL}/config/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ api_key: apiKey }),
+  });
+  return handleResponse(response);
+};

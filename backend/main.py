@@ -11,13 +11,48 @@ import database
 import time
 from collections import defaultdict
 from typing import Dict
+from pathlib import Path
 
 RATE_LIMIT_WINDOW = 60
 RATE_LIMIT_MAX_REQUESTS = 30
 
 rate_limit_store: Dict[str, List[float]] = defaultdict(list)
 
+APP_DIR = Path(__file__).parent
+CONFIG_FILE = APP_DIR / ".env"
+
+CONFIG_DEFAULTS = {
+    "OPENAI_API_KEY": "",
+    "CORS_ORIGINS": "http://localhost:3000",
+    "RATE_LIMIT": "30",
+    "MODEL": "gpt-4o",
+    "TEMPERATURE": "0.7",
+    "MAX_TOKENS": "2000"
+}
+
+def load_config() -> dict:
+    config_data = CONFIG_DEFAULTS.copy()
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and "=" in line and not line.startswith("#"):
+                    key, value = line.split("=", 1)
+                    config_data[key.strip()] = value.strip()
+    return config_data
+
+def save_config(config_data: dict):
+    with open(CONFIG_FILE, "w") as f:
+        f.write("# Prompt-Boost Configuration\n\n")
+        for key, value in config_data.items():
+            if value:
+                f.write(f"{key}={value}\n")
+
 def check_rate_limit(client_ip: str) -> bool:
+    global RATE_LIMIT_MAX_REQUESTS
+    cfg = load_config()
+    RATE_LIMIT_MAX_REQUESTS = int(cfg.get("RATE_LIMIT", 30))
+    
     current_time = time.time()
     rate_limit_store[client_ip] = [
         t for t in rate_limit_store[client_ip]
@@ -36,17 +71,18 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Prompt-Boost API",
     description="API para melhorar prompts usando IA.",
-    version="1.1.0",
+    version="1.2.0",
     lifespan=lifespan
 )
 
-OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
-CORS_ORIGINS = config("CORS_ORIGINS", default="http://localhost:3000")
-ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()]
+def get_cors_origins():
+    cfg = load_config()
+    origins = cfg.get("CORS_ORIGINS", "http://localhost:3000")
+    return [o.strip() for o in origins.split(",") if o.strip()]
 
 app.add_middleware(
     StarletteCORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
@@ -93,9 +129,87 @@ class GalleryItem(BaseModel):
 class GalleryResponse(BaseModel):
     prompts: List[GalleryItem]
 
+class ConfigUpdate(BaseModel):
+    openai_api_key: Optional[str] = None
+    cors_origins: Optional[str] = None
+    rate_limit: Optional[int] = None
+    model: Optional[str] = None
+    temperature: Optional[float] = None
+    max_tokens: Optional[int] = None
+
+class ConfigResponse(BaseModel):
+    cors_origins: str
+    rate_limit: int
+    model: str
+    temperature: float
+    max_tokens: int
+    api_key_configured: bool
+
+class TestApiKeyRequest(BaseModel):
+    api_key: str
+
+class TestApiKeyResponse(BaseModel):
+    success: bool
+    message: str
+    model: Optional[str] = None
+
 @app.get("/")
 def read_root():
-    return {"status": "API is running", "version": "1.1.0"}
+    return {"status": "API is running", "version": "1.2.0"}
+
+@app.get("/api/config", response_model=ConfigResponse)
+async def get_config():
+    cfg = load_config()
+    return ConfigResponse(
+        cors_origins=cfg.get("CORS_ORIGINS", "http://localhost:3000"),
+        rate_limit=int(cfg.get("RATE_LIMIT", 30)),
+        model=cfg.get("MODEL", "gpt-4o"),
+        temperature=float(cfg.get("TEMPERATURE", 0.7)),
+        max_tokens=int(cfg.get("MAX_TOKENS", 2000)),
+        api_key_configured=bool(cfg.get("OPENAI_API_KEY", ""))
+    )
+
+@app.post("/api/config")
+async def update_config(config_data: ConfigUpdate):
+    cfg = load_config()
+    
+    if config_data.openai_api_key is not None:
+        cfg["OPENAI_API_KEY"] = config_data.openai_api_key.strip()
+    if config_data.cors_origins is not None:
+        cfg["CORS_ORIGINS"] = config_data.cors_origins
+    if config_data.rate_limit is not None:
+        cfg["RATE_LIMIT"] = str(config_data.rate_limit)
+    if config_data.model is not None:
+        cfg["MODEL"] = config_data.model
+    if config_data.temperature is not None:
+        cfg["TEMPERATURE"] = str(config_data.temperature)
+    if config_data.max_tokens is not None:
+        cfg["MAX_TOKENS"] = str(config_data.max_tokens)
+    
+    save_config(cfg)
+    
+    return {"success": True, "message": "Configurações salvas com sucesso!"}
+
+@app.post("/api/config/test", response_model=TestApiKeyResponse)
+async def test_api_key(request: TestApiKeyRequest):
+    if not request.api_key or not request.api_key.strip():
+        return TestApiKeyResponse(success=False, message="API key não fornecida.")
+    
+    try:
+        client = openai.OpenAI(api_key=request.api_key.strip())
+        response = client.models.list()
+        default_model = client.models.retrieve("gpt-4o")
+        return TestApiKeyResponse(
+            success=True,
+            message="Conexão bem-sucedida!",
+            model=default_model.id
+        )
+    except openai.AuthenticationError:
+        return TestApiKeyResponse(success=False, message="API key inválida.")
+    except openai.RateLimitError:
+        return TestApiKeyResponse(success=False, message="Rate limit excedido.")
+    except Exception as e:
+        return TestApiKeyResponse(success=False, message=f"Erro: {str(e)}")
 
 @app.post("/api/improve-prompt", response_model=ImprovedPromptResponse)
 async def improve_prompt(request: PromptRequest, req: Request):
@@ -103,11 +217,13 @@ async def improve_prompt(request: PromptRequest, req: Request):
     if not check_rate_limit(client_ip):
         raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
 
-    api_key = OPENAI_API_KEY
+    cfg = load_config()
+    api_key = cfg.get("OPENAI_API_KEY", "")
+    
     if not api_key:
         raise HTTPException(
             status_code=500,
-            detail="OpenAI API key not configured on server. Please set OPENAI_API_KEY environment variable."
+            detail="OpenAI API key não configurada. Acesse Configurações para adicionar."
         )
 
     try:
@@ -122,13 +238,13 @@ async def improve_prompt(request: PromptRequest, req: Request):
         )
 
         completion = client.chat.completions.create(
-            model="gpt-4o",
+            model=cfg.get("MODEL", "gpt-4o"),
             messages=[
                 {"role": "system", "content": enhancement_instruction},
                 {"role": "user", "content": request.prompt}
             ],
-            max_tokens=2000,
-            temperature=0.7
+            max_tokens=int(cfg.get("MAX_TOKENS", 2000)),
+            temperature=float(cfg.get("TEMPERATURE", 0.7))
         )
 
         improved_prompt_text = completion.choices[0].message.content.strip()
@@ -139,28 +255,28 @@ async def improve_prompt(request: PromptRequest, req: Request):
         )
 
     except openai.AuthenticationError:
-        raise HTTPException(status_code=401, detail="Invalid OpenAI API key.")
+        raise HTTPException(status_code=401, detail="API key da OpenAI inválida.")
     except openai.RateLimitError:
-        raise HTTPException(status_code=429, detail="OpenAI rate limit exceeded.")
+        raise HTTPException(status_code=429, detail="Rate limit da OpenAI excedido.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro inesperado: {str(e)}")
 
 @app.post("/api/prompts", response_model=ShareResponse)
 async def share_prompt(request: ShareRequest):
     if len(request.original_prompt) > 50000 or len(request.improved_prompt) > 50000:
-        raise HTTPException(status_code=400, detail="Prompt too long. Maximum 50000 characters.")
+        raise HTTPException(status_code=400, detail="Prompt muito longo. Máximo 50000 caracteres.")
 
     try:
         share_id = database.save_prompt(request.original_prompt, request.improved_prompt)
         return ShareResponse(share_id=share_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save prompt: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar prompt: {str(e)}")
 
 @app.get("/api/prompts/{prompt_id}", response_model=PromptDetails)
 async def get_shared_prompt(prompt_id: str):
     prompt = database.get_prompt(prompt_id)
     if prompt is None:
-        raise HTTPException(status_code=404, detail="Prompt not found.")
+        raise HTTPException(status_code=404, detail="Prompt não encontrado.")
     return PromptDetails(
         id=prompt["id"],
         original_prompt=prompt["original_prompt"],
@@ -171,13 +287,13 @@ async def get_shared_prompt(prompt_id: str):
 async def publish_shared_prompt(prompt_id: str):
     prompt = database.get_prompt(prompt_id)
     if prompt is None:
-        raise HTTPException(status_code=404, detail="Prompt not found.")
+        raise HTTPException(status_code=404, detail="Prompt não encontrado.")
 
     try:
         database.publish_prompt(prompt_id)
         return
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to publish prompt: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao publicar prompt: {str(e)}")
 
 @app.get("/api/gallery", response_model=GalleryResponse)
 async def get_gallery():
@@ -185,4 +301,4 @@ async def get_gallery():
         prompts = database.get_public_prompts()
         return GalleryResponse(prompts=[GalleryItem(**dict(p)) for p in prompts])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve gallery: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Erro ao buscar galeria: {str(e)}")
