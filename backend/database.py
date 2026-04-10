@@ -1,7 +1,8 @@
 import sqlite3
 import uuid
+import os
 
-DATABASE_URL = "prompts.db"
+DATABASE_URL = os.getenv("DATABASE_PATH", "prompts.db")
 
 def init_db():
     """Initializes the database and creates the prompts table if it doesn't exist."""

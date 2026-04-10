@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import DiffDisplay from './DiffDisplay';
 import { improvePrompt, sharePrompt, publishPrompt } from './api';
@@ -7,7 +7,6 @@ import './App.css';
 function MainPage() {
   const [originalPrompt, setOriginalPrompt] = useState('');
   const [improvedPrompt, setImprovedPrompt] = useState('');
-  const [apiKey, setApiKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [shareableLink, setShareableLink] = useState('');
@@ -22,25 +21,7 @@ function MainPage() {
     }, 3000);
   };
 
-  // Load API key from local storage on component mount
-  useEffect(() => {
-    const storedApiKey = localStorage.getItem('openai_api_key');
-    if (storedApiKey) {
-      setApiKey(storedApiKey);
-    }
-  }, []);
-
-  const handleApiKeyChange = (e) => {
-    const newApiKey = e.target.value;
-    setApiKey(newApiKey);
-    localStorage.setItem('openai_api_key', newApiKey);
-  };
-
   const handleImprovePrompt = async () => {
-    if (!apiKey) {
-      setError('Please enter your OpenAI API key.');
-      return;
-    }
     if (!originalPrompt) {
       setError('Please enter a prompt to improve.');
       return;
@@ -54,7 +35,7 @@ function MainPage() {
     setIsPublished(false);
 
     try {
-      const data = await improvePrompt(originalPrompt, apiKey);
+      const data = await improvePrompt(originalPrompt);
       setImprovedPrompt(data.improved_prompt);
     } catch (err) {
       setError(err.message);
@@ -114,17 +95,6 @@ function MainPage() {
           <Link to="/gallery">View Gallery</Link>
         </nav>
       </header>
-
-      <div className="api-key-section">
-        <label htmlFor="api-key">OpenAI API Key:</label>
-        <input
-          id="api-key"
-          type="password"
-          value={apiKey}
-          onChange={handleApiKeyChange}
-          placeholder="Enter your OpenAI API Key here"
-        />
-      </div>
 
       {error && <div className="error-message">{error}</div>}
 

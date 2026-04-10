@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 const handleResponse = async (response) => {
   if (!response.ok) {
@@ -8,11 +8,11 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
-export const improvePrompt = async (prompt, apiKey) => {
+export const improvePrompt = async (prompt) => {
   const response = await fetch(`${API_BASE_URL}/improve-prompt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt, apiKey }),
+    body: JSON.stringify({ prompt }),
   });
   return handleResponse(response);
 };

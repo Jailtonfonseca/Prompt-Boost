@@ -4,3 +4,6 @@ openai
 pydantic-settings
 python-decouple
 requests
+pytest
+pytest-asyncio
+httpx

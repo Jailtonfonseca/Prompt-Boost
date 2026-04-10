@@ -1,37 +1,66 @@
 import os
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from starlette.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, field_validator
+from typing import List, Optional
 import openai
 from decouple import config
+from starlette.middleware.cors import CORSMiddleware as StarletteCORSMiddleware
 import database
+import time
+from collections import defaultdict
+from typing import Dict
 
-# --- App Configuration ---
-app = FastAPI(
-    title="Prompt Enhancer API",
-    description="An API to improve user-provided prompts using AI.",
-    version="1.0.0"
-)
+RATE_LIMIT_WINDOW = 60
+RATE_LIMIT_MAX_REQUESTS = 30
 
-@app.on_event("startup")
-def on_startup():
-    """Initialize the database on application startup."""
+rate_limit_store: Dict[str, List[float]] = defaultdict(list)
+
+def check_rate_limit(client_ip: str) -> bool:
+    current_time = time.time()
+    rate_limit_store[client_ip] = [
+        t for t in rate_limit_store[client_ip]
+        if current_time - t < RATE_LIMIT_WINDOW
+    ]
+    if len(rate_limit_store[client_ip]) >= RATE_LIMIT_MAX_REQUESTS:
+        return False
+    rate_limit_store[client_ip].append(current_time)
+    return True
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     database.init_db()
+    yield
 
-# --- CORS Configuration ---
-# Allows requests from the frontend (assuming it runs on localhost:3000)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+app = FastAPI(
+    title="Prompt-Boost API",
+    description="API para melhorar prompts usando IA.",
+    version="1.1.0",
+    lifespan=lifespan
 )
 
-# --- Pydantic Models ---
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+CORS_ORIGINS = config("CORS_ORIGINS", default="http://localhost:3000")
+ALLOWED_ORIGINS = [origin.strip() for origin in CORS_ORIGINS.split(",") if origin.strip()]
+
+app.add_middleware(
+    StarletteCORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
 class PromptRequest(BaseModel):
     prompt: str
-    apiKey: str
+
+    @field_validator("prompt")
+    @classmethod
+    def prompt_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Prompt cannot be empty")
+        return v.strip()[:10000]
 
 class ImprovedPromptResponse(BaseModel):
     original_prompt: str
@@ -41,10 +70,15 @@ class ShareRequest(BaseModel):
     original_prompt: str
     improved_prompt: str
 
+    @field_validator("original_prompt", "improved_prompt")
+    @classmethod
+    def prompts_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Prompt cannot be empty")
+        return v.strip()
+
 class ShareResponse(BaseModel):
     share_id: str
-
-from typing import List
 
 class PromptDetails(BaseModel):
     id: str
@@ -59,40 +93,42 @@ class GalleryItem(BaseModel):
 class GalleryResponse(BaseModel):
     prompts: List[GalleryItem]
 
-# --- API Endpoints ---
 @app.get("/")
 def read_root():
-    return {"status": "API is running"}
+    return {"status": "API is running", "version": "1.1.0"}
 
 @app.post("/api/improve-prompt", response_model=ImprovedPromptResponse)
-async def improve_prompt(request: PromptRequest):
-    """
-    Receives a prompt and an API key, improves the prompt using an AI model,
-    and returns both the original and the improved prompts.
-    """
-    if not request.prompt:
-        raise HTTPException(status_code=400, detail="Prompt cannot be empty.")
-    if not request.apiKey:
-        raise HTTPException(status_code=400, detail="API key is required.")
+async def improve_prompt(request: PromptRequest, req: Request):
+    client_ip = req.client.host if req.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Rate limit exceeded. Try again later.")
 
-    try:
-        # Configure the OpenAI client with the user-provided key
-        client = openai.OpenAI(api_key=request.apiKey)
-
-        # The instruction for the AI model to improve the prompt
-        enhancement_instruction = (
-            "Please refine the following user prompt to be more clear, focused, and effective. "
-            "Preserve the original intent and key elements, but enhance its structure and wording "
-            "to yield better results from an AI model. Here is the user's prompt:"
+    api_key = OPENAI_API_KEY
+    if not api_key:
+        raise HTTPException(
+            status_code=500,
+            detail="OpenAI API key not configured on server. Please set OPENAI_API_KEY environment variable."
         )
 
-        # Make the API call to OpenAI
+    try:
+        client = openai.OpenAI(api_key=api_key)
+
+        enhancement_instruction = (
+            "You are an expert prompt engineer. Refine the following user prompt to be more clear, "
+            "focused, and effective for an LLM. Preserve the original intent and key elements, "
+            "but enhance structure, specificity, and clarity. "
+            "Respond ONLY with the improved prompt, no explanations.\n\n"
+            "Original prompt:"
+        )
+
         completion = client.chat.completions.create(
-            model="gpt-4o",  # Using the latest model as requested
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": enhancement_instruction},
                 {"role": "user", "content": request.prompt}
-            ]
+            ],
+            max_tokens=2000,
+            temperature=0.7
         )
 
         improved_prompt_text = completion.choices[0].message.content.strip()
@@ -104,15 +140,15 @@ async def improve_prompt(request: PromptRequest):
 
     except openai.AuthenticationError:
         raise HTTPException(status_code=401, detail="Invalid OpenAI API key.")
+    except openai.RateLimitError:
+        raise HTTPException(status_code=429, detail="OpenAI rate limit exceeded.")
     except Exception as e:
-        # Catch other potential exceptions (e.g., network issues, invalid requests)
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 @app.post("/api/prompts", response_model=ShareResponse)
 async def share_prompt(request: ShareRequest):
-    """Saves a prompt pair and returns a unique ID for sharing."""
-    if not request.original_prompt or not request.improved_prompt:
-        raise HTTPException(status_code=400, detail="Both prompts must be provided.")
+    if len(request.original_prompt) > 50000 or len(request.improved_prompt) > 50000:
+        raise HTTPException(status_code=400, detail="Prompt too long. Maximum 50000 characters.")
 
     try:
         share_id = database.save_prompt(request.original_prompt, request.improved_prompt)
@@ -122,19 +158,17 @@ async def share_prompt(request: ShareRequest):
 
 @app.get("/api/prompts/{prompt_id}", response_model=PromptDetails)
 async def get_shared_prompt(prompt_id: str):
-    """Retrieves a shared prompt pair by its ID."""
     prompt = database.get_prompt(prompt_id)
     if prompt is None:
         raise HTTPException(status_code=404, detail="Prompt not found.")
     return PromptDetails(
-        id=prompt['id'],
-        original_prompt=prompt['original_prompt'],
-        improved_prompt=prompt['improved_prompt']
+        id=prompt["id"],
+        original_prompt=prompt["original_prompt"],
+        improved_prompt=prompt["improved_prompt"]
     )
 
 @app.post("/api/prompts/{prompt_id}/publish", status_code=204)
 async def publish_shared_prompt(prompt_id: str):
-    """Marks a specific prompt as public."""
     prompt = database.get_prompt(prompt_id)
     if prompt is None:
         raise HTTPException(status_code=404, detail="Prompt not found.")
@@ -147,11 +181,8 @@ async def publish_shared_prompt(prompt_id: str):
 
 @app.get("/api/gallery", response_model=GalleryResponse)
 async def get_gallery():
-    """Retrieves all prompts that have been made public."""
     try:
         prompts = database.get_public_prompts()
         return GalleryResponse(prompts=[GalleryItem(**dict(p)) for p in prompts])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve gallery: {str(e)}")
-
-# --- To run the app locally: uvicorn main:app --reload ---
