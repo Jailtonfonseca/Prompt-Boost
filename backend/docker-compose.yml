@@ -1,4 +1,4 @@
-# Prompt-Boost Backend Docker Compose
+version: '3.8'
 
 services:
   # PostgreSQL Database
@@ -45,9 +45,9 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/prompt_boost
       REDIS_URL: redis://redis:6379/0
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      GEMINI_API_KEY: ""
       DEBUG: "false"
     depends_on:
       postgres:
@@ -62,30 +62,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-
-  # Backend Development (with hot reload)
-  backend-dev:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: development
-    container_name: prompt_boost_backend_dev
-    ports:
-      - "8000:8000"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/prompt_boost
-      REDIS_URL: redis://redis:6379/0
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      DEBUG: "true"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./src:/app/src
-    profiles:
-      - dev
 
 volumes:
   postgres_data:
