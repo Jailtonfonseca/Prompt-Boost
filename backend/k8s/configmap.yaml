@@ -1,0 +1,56 @@
+---
+# ConfigMap for Prompt-Boost Backend configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prompt-boost-config
+  namespace: default
+  labels:
+    app: prompt-boost
+    component: config
+data:
+  # Application settings
+  APP_NAME: "Prompt-Boost Backend"
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  
+  # Server
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  
+  # CORS Origins (space-separated for ConfigMap)
+  CORS_ORIGINS: "https://yourdomain.com,https://app.yourdomain.com"
+  
+  # Recursion Settings
+  DEFAULT_MAX_ITERATIONS: "5"
+  DEFAULT_TEMPERATURE: "0.7"
+  MAX_TOKENS_PER_RUN: "10000"
+  
+  # Cost Limits
+  MAX_TOKENS_PER_DAY: "100000"
+  MAX_TOKENS_PER_USER: "10000"
+  
+  # Authentication
+  ALGORITHM: "HS256"
+  ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+  
+  # Rate Limiting
+  RATE_LIMIT_PER_MINUTE: "30"
+  
+  # LLM Provider settings
+  DEFAULT_PROVIDER: "openai"
+  DEFAULT_MODEL: "gpt-4o"
+  
+  # Monitoring
+  ENABLE_PROMETHEUS: "true"
+  JAEGER_AGENT_HOST: "jaeger-collector"
+  JAEGER_AGENT_PORT: "6831"
+  
+  # Database connection pool
+  DB_POOL_SIZE: "20"
+  DB_MAX_OVERFLOW: "10"
+  DB_POOL_RECYCLE: "3600"
+  
+  # Redis cache
+  REDIS_DB: "0"
+  REDIS_ENCODING: "utf-8"

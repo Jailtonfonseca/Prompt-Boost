@@ -1,0 +1,125 @@
+# Prometheus Alert Rules for Prompt-Boost Backend
+groups:
+  - name: prompt-boost-alerts
+    interval: 30s
+    rules:
+      # High Request Rate
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High request rate detected"
+          description: "Request rate is {{ $value }} req/s for endpoint {{ $labels.endpoint }}"
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} for endpoint {{ $labels.endpoint }}"
+
+      # High Request Latency
+      - alert: HighRequestLatency
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High request latency detected"
+          description: "P95 latency is {{ $value }}s for {{ $labels.endpoint }}"
+
+      # LLM API Errors
+      - alert: LLMAPIErrors
+        expr: rate(llm_api_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "LLM API errors detected"
+          description: "{{ $labels.provider }} errors: {{ $value }} errors/s, type: {{ $labels.error_type }}"
+
+      # LLM API Slow Responses
+      - alert: LLMAPISlowResponses
+        expr: histogram_quantile(0.95, rate(llm_api_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "LLM API slow responses"
+          description: "P95 latency for {{ $labels.provider }} is {{ $value }}s"
+
+      # Database Connection Issues
+      - alert: DatabaseConnectionHigh
+        expr: db_connections_gauge > 18
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Database connection usage high"
+          description: "Current connections: {{ $value }} (limit: 20)"
+
+      # Database Query Slow
+      - alert: DatabaseQuerySlow
+        expr: histogram_quantile(0.95, rate(db_query_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query time: {{ $value }}s for {{ $labels.operation }} on {{ $labels.table }}"
+
+      # Sessions Running High
+      - alert: SessionsRunningHigh
+        expr: recursion_sessions_running_gauge > 50
+        for: 5m
+        labels:
+          severity: warning
+          component: recursion
+        annotations:
+          summary: "High number of sessions running"
+          description: "Current sessions: {{ $value }}"
+
+      # Session Failure Rate
+      - alert: SessionFailureRate
+        expr: rate(recursion_sessions_total{status="failed"}[5m]) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          component: recursion
+        annotations:
+          summary: "High session failure rate"
+          description: "Failure rate for {{ $labels.technique }}: {{ $value }} failures/s"
+
+      # Cache Hit Rate Low
+      - alert: CacheHitRateLow
+        expr: rate(cache_hits_total[5m]) / (rate(cache_hits_total[5m]) + rate(cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache {{ $labels.cache_name }} hit rate: {{ $value | humanizePercentage }}"
+
+      # High Token Usage
+      - alert: HighTokenUsage
+        expr: rate(tokens_used_total[1h]) > 10000
+        for: 5m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "High token usage detected"
+          description: "Token usage rate: {{ $value }} tokens/hour for {{ $labels.provider }}"

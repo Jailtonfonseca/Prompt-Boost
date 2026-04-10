@@ -1,0 +1,131 @@
+---
+# Role for Prompt-Boost Backend
+# Defines permissions needed for the application to run
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: prompt-boost-role
+  namespace: default
+  labels:
+    app: prompt-boost
+    component: rbac
+rules:
+# Allow reading ConfigMaps for configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+  resourceNames: ["prompt-boost-config"]
+
+# Allow reading Secrets for credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+  resourceNames: ["prompt-boost-secrets"]
+
+# Allow reading Pods (for service discovery, if needed)
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading Services
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+# Allow reading endpoints (for discovering other services)
+- apiGroups: [""]
+  resources: ["endpoints"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading events (for debugging)
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["create", "patch"]
+
+# Allow reading leases for leader election (if using in future)
+- apiGroups: ["coordination.k8s.io"]
+  resources: ["leases"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+
+---
+# RoleBinding for Prompt-Boost Backend ServiceAccount
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: prompt-boost-rolebinding
+  namespace: default
+  labels:
+    app: prompt-boost
+    component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: prompt-boost-role
+subjects:
+- kind: ServiceAccount
+  name: prompt-boost
+  namespace: default
+
+---
+# ClusterRole for Prompt-Boost (for cross-namespace operations if needed)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prompt-boost-cluster-role
+  labels:
+    app: prompt-boost
+    component: rbac
+rules:
+# Allow reading namespaces
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch"]
+
+# Allow reading cluster-wide events
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list"]
+
+# Allow reading nodes (for understanding cluster capacity)
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get", "list", "watch"]
+
+# Optional: Allow metrics reading (for Prometheus/Grafana)
+- apiGroups: ["metrics.k8s.io"]
+  resources: ["pods", "nodes"]
+  verbs: ["get", "list"]
+
+---
+# ClusterRoleBinding for Prompt-Boost
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prompt-boost-cluster-rolebinding
+  labels:
+    app: prompt-boost
+    component: rbac
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prompt-boost-cluster-role
+subjects:
+- kind: ServiceAccount
+  name: prompt-boost
+  namespace: default
+
+---
+# PodDisruptionBudget to ensure availability during cluster maintenance
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prompt-boost-pdb
+  namespace: default
+  labels:
+    app: prompt-boost
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: prompt-boost
+      component: backend
