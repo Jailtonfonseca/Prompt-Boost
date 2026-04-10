@@ -75,12 +75,12 @@ import logging
 
 class RecursionConfig(BaseModel):
     """Configuração compartilhada por todos engines"""
-    technique: str                  # 'self_refine', 'tot', etc
+    technique: str                  # 'self_refine', 'tree_of_thoughts', etc
     provider: str                   # 'openai', 'anthropic', etc
     model: str                      # 'gpt-4o', 'claude-3', etc
     temperature: float = 0.7
     max_iterations: int = 3         # 1-10
-    max_tokens_total: int = 10000   # 1000-100000
+    max_tokens_used: int = 10000    # 1000-100000
     max_time_ms: int = 120000       # 120 segundos
     extra_params: Dict = {}         # Técnica-específica
 
@@ -114,7 +114,7 @@ class RecursionResult(BaseModel):
     execution_id: str
     final_answer: str
     iterations_count: int
-    tokens_total: int
+    tokens_used: int
     time_total_ms: float
     quality_score: float            # 0-1 (baseline = 0.5)
     rer_score: float                # Recursion Efficiency Ratio
@@ -231,7 +231,7 @@ class RecursiveThinkingEngine(ABC):
                 execution_id=execution_id,
                 final_answer=state.current_prompt,
                 iterations_count=state.iteration,
-                tokens_total=self.tokens_used,
+                tokens_used=self.tokens_used,
                 time_total_ms=(time.time() - state.start_time) * 1000,
                 quality_score=self._calculate_quality_score(state),
                 rer_score=self._calculate_rer(state),
@@ -336,7 +336,7 @@ Prompt melhorado:"""
             return False
         
         # Critério 2: Atingiu max tokens?
-        if self.tokens_used >= self.config.max_tokens_total:
+        if self.tokens_used >= self.config.max_tokens_used:
             return False
         
         # Critério 3: Atingiu max tempo?

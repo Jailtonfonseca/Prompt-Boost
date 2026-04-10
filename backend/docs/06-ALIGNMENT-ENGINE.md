@@ -803,7 +803,7 @@ class RecursiveAlignmentEngine(RecursiveThinkingEngine):
                 return RecursionResult(
                     final_answer=current_response,
                     iterations_count=iteration + 1,
-                    tokens_total=len(current_response.split()) * 1,  # Estimado
+                    tokens_used=len(current_response.split()) * 1,  # Estimado
                     quality_score=verification.alignment_score,
                     rer_score=verification.alignment_score,
                     metadata={
@@ -821,7 +821,7 @@ class RecursiveAlignmentEngine(RecursiveThinkingEngine):
                 return RecursionResult(
                     final_answer=current_response,
                     iterations_count=iteration + 1,
-                    tokens_total=len(current_response.split()),
+                    tokens_used=len(current_response.split()),
                     quality_score=verification.alignment_score,
                     rer_score=0.0,
                     metadata={
@@ -845,7 +845,7 @@ class RecursiveAlignmentEngine(RecursiveThinkingEngine):
         return RecursionResult(
             final_answer=current_response,
             iterations_count=iteration,
-            tokens_total=len(current_response.split()),
+            tokens_used=len(current_response.split()),
             quality_score=verification.alignment_score,
             rer_score=0.0,
             metadata={
@@ -923,7 +923,7 @@ RESPOSTA CORRIGIDA:
         return RecursionResult(
             final_answer="Verificação completada",
             iterations_count=1,
-            tokens_total=len(self.config.initial_prompt.split()),
+            tokens_used=len(self.config.initial_prompt.split()),
             quality_score=verification.alignment_score,
             rer_score=verification.alignment_score,
             metadata={

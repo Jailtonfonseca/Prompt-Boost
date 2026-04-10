@@ -343,7 +343,7 @@ async def execute_recursion(
                 payload={
                     'final_answer': result.final_answer,
                     'quality_score': result.quality_score,
-                    'tokens_used': result.tokens_total,
+                    'tokens_used': result.tokens_used,
                     'execution_time_ms': result.metadata.get('execution_time_ms', 0)
                 }
             )

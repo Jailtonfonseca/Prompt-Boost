@@ -178,7 +178,7 @@ POST /api/improve-prompt-recursive
 {
   "final_answer": "...",
   "iterations": [...],
-  "tokens_total": 4200,
+  "tokens_used": 4200,
   "time_ms": 15000,
   ...
 }
@@ -262,7 +262,7 @@ class RecursionConfig:
     model: str
     temperature: float
     max_iterations: int
-    max_tokens_total: int
+    max_tokens_used: int
     max_time_ms: int
     extra_params: Dict
 
@@ -270,7 +270,7 @@ class RecursionConfig:
 class RecursionResult:
     final_answer: str
     iterations_count: int
-    tokens_total: int
+    tokens_used: int
     time_total_ms: float
     quality_score: float
     rer_score: float

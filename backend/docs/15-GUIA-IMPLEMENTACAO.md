@@ -196,7 +196,7 @@ class RecursiveThinkingEngine:
             "final_answer": current_state,
             "quality_score": max([i.quality_score for i in self.iterations]),
             "iterations": len(self.iterations),
-            "tokens_total": sum(i.tokens_used for i in self.iterations)
+            "tokens_used": sum(i.tokens_used for i in self.iterations)
         }
     
     async def _generate(self, state: str) -> List[str]:

@@ -699,7 +699,7 @@ Gere {num_candidates} continuações originais que exploram diferentes ângulos.
             return RecursionResult(
                 final_answer=best_node.content,
                 iterations_count=len(self.tree.nodes),
-                tokens_total=total_tokens,
+                tokens_used=total_tokens,
                 quality_score=best_node.average_value,
                 rer_score=self._calculate_rer(best_node.average_value, total_tokens),
                 metadata={

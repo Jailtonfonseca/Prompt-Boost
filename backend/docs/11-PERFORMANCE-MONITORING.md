@@ -263,7 +263,7 @@ def execute_recursion(session_id, prompt, technique):
         logger.log('info', 'Execution completed',
             session_id=session_id,
             quality_score=result.quality_score,
-            tokens_used=result.tokens_total
+            tokens_used=result.tokens_used
         )
     except Exception as e:
         logger.log('error', 'Execution failed',

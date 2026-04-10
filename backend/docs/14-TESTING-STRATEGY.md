@@ -40,7 +40,7 @@ def test_execute_returns_result(engine, mocker):
     result = engine.execute()
     assert result.final_answer is not None
     assert 0 <= result.quality_score <= 1.0
-    assert result.tokens_total > 0
+    assert result.tokens_used > 0
 
 def test_episodic_memory_stores_patterns(engine):
     """Testa armazenamento em memória episódica."""

@@ -1040,7 +1040,7 @@ CANDIDATO 2: [raciocínio]
             return RecursionResult(
                 final_answer=search_result['best_solution_content'],
                 iterations_count=search_result['iterations'],
-                tokens_total=self._calculate_tokens_used(),
+                tokens_used=self._calculate_tokens_used(),
                 quality_score=search_result['best_score'],
                 rer_score=self._calculate_rer(search_result['best_score']),
                 metadata={
@@ -1152,7 +1152,7 @@ class GraphOfThoughtsEngine(RecursiveThinkingEngine):
         return RecursionResult(
             final_answer=self.graph.nodes[final_node_id].content,
             iterations_count=len(self.graph.nodes),
-            tokens_total=sum(n.tokens_used for n in self.graph.nodes.values()),
+            tokens_used=sum(n.tokens_used for n in self.graph.nodes.values()),
             quality_score=self.graph.nodes[final_node_id].score,
             rer_score=0.0,
             metadata={

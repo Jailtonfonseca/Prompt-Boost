@@ -33,6 +33,63 @@ Inicia uma nova execução recursiva.
 }
 ```
 
+### POST /recursion/formalize
+
+Formaliza enunciado natural em linguagem de prova formal (Lean4).
+
+**Request**:
+```json
+{
+  "prompt": "Se um número é divisível por 6, então é divisível por 2 e 3",
+  "max_iterations": 3
+}
+```
+
+**Response (200)**:
+```json
+{
+  "session_id": "sess_...",
+  "technique": "autoformal",
+  "status": "completed",
+  "lean4_proof": "theorem divisible_by_6 (n : ℕ) (h : 6 ∣ n) : 2 ∣ n ∧ 3 ∣ n := by\n  obtain ⟨k, hk⟩ := h\n  use 3 * k, 2 * k\n  omega",
+  "verified": true,
+  "quality_score": 0.98,
+  "tokens_used": 850
+}
+```
+
+### POST /recursion/verify
+
+Verifica alinhamento, segurança e detecção de viés em uma resposta.
+
+**Request**:
+```json
+{
+  "prompt": "Decisão de empréstimo: Negar $50k a aplicante com score 720 devido a region=rural",
+  "verify_safety": true,
+  "detect_bias": true
+}
+```
+
+**Response (200)**:
+```json
+{
+  "session_id": "sess_...",
+  "technique": "alignment",
+  "status": "completed",
+  "verdict": "rejected",
+  "alignment_score": 0.18,
+  "violations": [
+    {
+      "type": "geographic_bias",
+      "severity": "critical",
+      "description": "Geographic region is not a legitimate lending factor"
+    }
+  ],
+  "quality_score": 0.95
+}
+```
+
 ### GET /recursion/session/{session_id}
 
 Obtém status e resultado de uma sessão.

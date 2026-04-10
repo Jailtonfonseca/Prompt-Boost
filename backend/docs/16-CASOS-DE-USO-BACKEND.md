@@ -66,7 +66,7 @@ curl -X POST http://localhost:8000/recursion/execute \
   "quality_score": 0.87,
   "iterations": 4,
   "tokens_used": 8942,
-  "rer_metric": 0.92,
+  "rer_score": 0.92,
   "execution_time_ms": 23500,
   "created_at": "2025-04-10T14:32:00Z",
   "updated_at": "2025-04-10T14:32:23Z"

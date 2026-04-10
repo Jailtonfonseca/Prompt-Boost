@@ -783,7 +783,7 @@ STATEMENT REFINADO (NL):
         return RecursionResult(
             final_answer=formalization.lean4_code if formalization.lean4_code else "Formalização falhou",
             iterations_count=len(formalization.inference_log),
-            tokens_total=len(formalization.original_nl.split()) * 2,
+            tokens_used=len(formalization.original_nl.split()) * 2,
             quality_score=formalization.confidence if formalization.is_valid() else 0.0,
             rer_score=1.0 if formalization.is_valid() else 0.0,
             metadata={

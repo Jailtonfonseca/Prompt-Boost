@@ -912,7 +912,7 @@ class DebateEngine(RecursiveThinkingEngine):
             return RecursionResult(
                 final_answer=final_answer,
                 iterations_count=len(self.session.rounds),
-                tokens_total=total_tokens,
+                tokens_used=total_tokens,
                 quality_score=quality_score,
                 rer_score=(quality_score * 100) / (total_tokens / 1000) if total_tokens > 0 else 0,
                 metadata={
