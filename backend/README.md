@@ -8,9 +8,8 @@ Production-grade recursive reasoning platform with 7 LLM techniques, multi-provi
 
 ### Prerequisites
 - Python 3.11+
-- PostgreSQL 15+
-- Redis 7+
 - Docker & Docker Compose (optional)
+- SQLite (embedado, não requer instalação externa)
 
 ### Local Development
 
@@ -28,29 +27,27 @@ pip install -r requirements.txt
 
 # 4. Configure environment
 cp .env.example .env
-# Edit .env with your API keys and database credentials
+# Edit .env with your API keys (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+# O banco de dados SQLite é inicializado automaticamente
 
-# 5. Initialize database
-alembic upgrade head
+# 5. Run development server
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
 
-# 6. Run development server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# 7. Access API
+# 6. Access API
 open http://localhost:8000/docs
 ```
 
 ### Docker Compose (Recommended)
 
 ```bash
-# Start entire stack (FastAPI + PostgreSQL + Redis)
-docker-compose up -d
+# Start backend + frontend
+docker compose up -d
 
 # View logs
-docker-compose logs -f web
+docker compose logs -f backend
 
 # Stop services
-docker-compose down
+docker compose down
 ```
 
 ---
@@ -113,25 +110,31 @@ backend/
 │   ├── 15-GUIA-IMPLEMENTACAO.md
 │   ├── 16-CASOS-DE-USO-BACKEND.md
 │   └── INDEX.md
-├── src/                           # Source code (to be created)
+├── src/                           # Source code
+│   ├── api/                       # API routers
+│   │   ├── __init__.py
+│   │   ├── recursion.py          # Recursion endpoints (v2)
+│   │   ├── websocket.py          # WebSocket endpoints
+│   │   └── compatibility.py      # Compatibility layer (v1)
 │   ├── engines/                   # 7 recursive thinking engines
 │   ├── routers/                   # HTTP + WebSocket routes
 │   ├── providers/                 # LLM integrations
-│   ├── models/                    # Database models
+│   ├── models/                    # Database models (SQLAlchemy)
+│   ├── schemas/                   # Pydantic schemas
 │   ├── services/                  # Business logic
 │   └── utils/                     # Helpers & formatters
 ├── tests/                         # Test suites
 │   ├── unit/
 │   ├── integration/
 │   └── e2e/
-├── migrations/                    # Alembic database migrations
+├── migrations/                    # Alembic database migrations (opcional)
 ├── k8s/                          # Kubernetes manifests
-├── main.py                       # FastAPI application entry
-├── requirements.txt              # Python dependencies
+├── main.py                       # FastAPI application entry (src/main.py)
+├── requirements.txt              # Python dependencies (inclui aiosqlite)
 ├── Dockerfile                    # Container image
 ├── docker-compose.yml           # Local development stack
-├── .env.example                 # Environment template
-└── README.md                    # This file
+├── .env                         # Environment configuration
+└── .env.example                 # Environment template
 ```
 
 ---
@@ -145,11 +148,16 @@ backend/
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 GEMINI_API_KEY=...
-COHERE_API_KEY=...
 
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/prompt_boost
-REDIS_URL=redis://localhost:6379
+# Database (SQLite - não requer instalação adicional)
+DATABASE_URL=sqlite+aiosqlite:///./prompt_boost.db
+DATABASE_URL_SYNC=sqlite:///./prompt_boost.db
+
+# Database Opcional (PostgreSQL - se preferir)
+# DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/prompt_boost
+
+# Redis Opcional (não requerido para funcionamento básico)
+# REDIS_URL=redis://localhost:6379/0
 
 # Security
 SECRET_KEY=your-secret-key-here
@@ -164,6 +172,9 @@ JAEGER_AGENT_PORT=6831
 # Application
 LOG_LEVEL=INFO
 ENVIRONMENT=development
+
+# CORS (formato JSON array)
+CORS_ORIGINS=["http://localhost:3000","http://localhost:8000","http://127.0.0.1:3000"]
 ```
 
 ---
@@ -374,11 +385,25 @@ kill -9 <PID>
 
 **Database connection failed**
 ```bash
-# Check PostgreSQL is running
-psql -U postgres -h localhost
+# Verificar se o banco SQLite existe
+ls -la *.db
 
-# Verify DATABASE_URL in .env
-echo $DATABASE_URL
+# Se não existir, será criado automaticamente na primeira execução
+# O banco usa driver aiosqlite (async)
+```
+
+**CORS Error - "error parsing value for field CORS_ORIGINS"**
+```bash
+# O formato deve ser JSON array, não lista separada por vírgula
+# ERRADO: CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+# CORRETO: CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+```
+
+**SQLAlchemy Error - "The loaded 'pysqlite' is not async"**
+```bash
+# Use o driver aiosqlite para SQLite async
+# DATABASE_URL=sqlite+aiosqlite:///./prompt_boost.db
+# Não use: sqlite:// (sync) ou pysqlite
 ```
 
 **LLM API errors**
@@ -387,7 +412,7 @@ echo $DATABASE_URL
 echo $OPENAI_API_KEY
 
 # Test provider connection
-python -c "from app.providers import ProviderManager; pm = ProviderManager(); pm.test_openai()"
+python -c "from src.providers import ProviderManager; pm = ProviderManager()"
 ```
 
 **WebSocket connection refused**
@@ -399,13 +424,23 @@ curl http://localhost:8000/health
 wscat -c ws://localhost:8000/ws/test
 ```
 
+**Frontend 502 Bad Gateway**
+```bash
+# Verificar se o backend está rodando
+docker compose ps
+docker compose logs backend
+
+# Verificar se o nginx consegue reachar o backend
+docker exec frontend-container wget -qO- http://backend:8000/health
+```
+
 ### Logs
 ```bash
 # Development
 tail -f app.log
 
 # Docker
-docker logs -f backend-container
+docker compose logs -f backend
 
 # Kubernetes
 kubectl logs -f deployment/backend -n prompt-boost
@@ -454,7 +489,17 @@ Built with:
 
 ---
 
-**Version**: 2.0.0  
-**Last Updated**: 2025-04-10  
-**Status**: Development 🚧
+**Version**: 2.0.1  
+**Last Updated**: 2026-04-12  
+**Status**: ✅ Produção - SQLite + API Compatibility
+
+---
+
+## 🙏 Acknowledgments
+
+Built with:
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [SQLAlchemy](https://www.sqlalchemy.org/) + [aiosqlite](https://github.com/omnilib/aiosqlite)
+- [Pydantic](https://docs.pydantic.dev/)
+- [Kubernetes](https://kubernetes.io/)
 

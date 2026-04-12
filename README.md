@@ -1,12 +1,14 @@
 # Prompt-Boost
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue)](https://github.com/Jailtonfonseca/Prompt-Boost/releases)
+[![Version](https://img.shields.io/badge/version-2.0.1-blue)](https://github.com/Jailtonfonseca/Prompt-Boost/releases)
 [![License](https://img.shields.io/badge/license-GPL--3.0-green)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.9+-yellow)](https://www.python.org/)
-[![React](https://img.shields.io/badge/react-19.x-orange)](https://react.dev/)
+[![Python](https://img.shields.io/badge/python-3.11+-yellow)](https://www.python.org/)
+[![React](https://https://img.shields.io/badge/react-19.x-orange)](https://react.dev/)
 [![Docker](https://img.shields.io/badge/docker-24.x-2496ed)](https://www.docker.com/)
 
-**Prompt-Boost** é uma ferramenta web full-stack para otimização de prompts para LLMs. Insira um prompt bruto e receba uma versão melhorada, mais clara e eficaz using técnicas avançadas de pensamento recursivo.
+**Prompt-Boost** é uma ferramenta web full-stack para otimização de prompts para LLMs. Insira um prompt bruto e receba uma versão melhorada, mais clara e eficaz usando técnicas avançadas de pensamento recursivo.
+
+> **Nota**: A versão 2.0.1 usa SQLite (não requer PostgreSQL/Redis) e inclui compatibility layer para frontends v1.x.
 
 ![Demo](docs/demo.gif)
 
@@ -28,39 +30,14 @@
 - **OpenAI SDK** - Integração com modelos GPT
 - **Google Generative AI** - Integração com Gemini
 - **xAI SDK** - Integração com Grok
-- **SQLite** - Banco de dados local
+- **SQLite + aiosqlite** - Banco de dados local (async)
 - **Pydantic** - Validação de dados
+- **SQLAlchemy 2.0** - ORM async
 
 ### Frontend
 - **React 19** - Biblioteca de UI moderna
 - **React Router** - Navegação SPA
 - **diff-match-patch** - Renderização de diffs
-
-## Provedores Suportados
-
-| Provedor | Modelo Padrão | native Models |
-|---------|--------------|-------------|
-| **OpenAI** | gpt-4o | gpt-4o, gpt-4o-mini, gpt-4-turbo, o1-preview |
-| **Google Gemini** | gemini-2.0-flash | gemini-2.0-flash, gemini-1.5-pro, gemini-1.5-flash |
-| **xAI Grok** | grok-2 | grok-2, grok-2-vision-1212, grok-beta |
-| **OpenRouter** | openai/gpt-4o | openai/gpt-4o, claude-3.5-sonnet, llama-3.1-405b |
-| **Groq** | llama-3.1-70b-versatile | llama-3.1-70b-versatile, mixtral-8x7b-32768 |
-
-## Técnicas Recursivas
-
-### Self-Refine
-O **Self-Refine** itera o prompt através de ciclos de geração e crítica:
-1. Gera uma versão melhorada do prompt
-2. Usa um modelo de crítica para avaliar
-3. Refina baseado no feedback
-4. Repete pelo número de iterações configurado
-
-### Tree of Thoughts (ToT)
-O **ToT** explora múltiplos caminhos de pensamento:
-1. Gera várias abordagens alternativas
-2. Avalia cada ramificação
-3. Seleciona a melhor via
-4. Repete para refinar
 
 ## Instalação
 
@@ -74,14 +51,14 @@ cd Prompt-Boost
 ### Configuração Docker (Recomendado)
 
 ```bash
-# Iniciar todos os serviços
-docker-compose up -d
+# Iniciar todos os serviços (backend + frontend)
+docker compose up -d
 
 # Verificar logs
-docker-compose logs -f
+docker compose logs -f
 
 # Parar serviços
-docker-compose down
+docker compose down
 ```
 
 Os serviços estarán disponíveis em:
@@ -89,74 +66,15 @@ Os serviços estarán disponíveis em:
 - **Backend**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
 
-### Instalação Manual
-
-#### Pré-requisitos
-
-- Python 3.9+
-- Node.js 18+
-
-#### Backend
-
-```bash
-cd backend
-
-# Criar ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# .\venv\Scripts\activate   # Windows
-
-# Instalar dependências
-pip install -r requirements.txt
-
-# Iniciar servidor
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### Frontend
-
-```bash
-cd frontend
-
-# Instalar dependências
-npm install
-
-# Iniciar servidor
-npm start
-```
-
-O frontend estará disponível em `http://localhost:3000`.
-
-## Configuração
-
-### Via Interface Web
-
-1. Acesse http://localhost:3000
-2. Clique no ícone de configurações (⚙️)
-3. Selecione o provedorprincipal
-4. Cole sua API Key
-5. Clique em "Testar" para verificar
-6. Save as configurações
-
-### Adicionar Provedor de Crítica (Self-Refine)
-
-Para usar técnicas Self-Refine com dois modelos:
-
-1. Nas configurações, configure o **Provedor Principal**
-2. Selecione "custom" em provedor de crítica
-3. Configure um segundo provedor/API key
-4. A técnica usará o provedor principal para gerar e o de crítica para avaliar
-
 ### Variáveis de Configuração
 
 | Variável | Descrição | Padrão |
 |----------|----------|--------|
-| CORS_ORIGINS | Origins permitidos (vírgula) | http://localhost:3000 |
-| RATE_LIMIT | Requisições por minuto | 30 |
-| TEMPERATURE | Temperatura do modelo | 0.7 |
-| MAX_TOKENS | Tokens máximos de saída | 2000 |
-| RECURSION_TECHNIQUE | Técnica: none/self-refine/tot | none |
-| RECURSION_ITERATIONS | Iterações (2-5) | 3 |
+| CORS_ORIGINS | Origins permitidos (formato JSON array) | ["http://localhost:3000"] |
+| DATABASE_URL | URL do banco (sqlite+aiosqlite ou postgresql+asyncpg) | sqlite+aiosqlite |
+| OPENAI_API_KEY | Chave API OpenAI | - |
+| DEFAULT_PROVIDER | Provedor padrão | openai |
+| DEFAULT_MODEL | Modelo padrão | gpt-4o |
 
 ## Uso
 
@@ -209,26 +127,36 @@ Acesse http://localhost:8000/docs para Swagger UI.
 ```
 Prompt-Boost/
 ├── backend/
-│   ├── main.py              # API FastAPI
-│   ├── providers.py          # Abstração de provedores
-│   ├── recursion.py          # Técnicas Self-Refine e ToT
-│   ├── database.py           # Operações SQLite
-│   ├── requirements.txt     # Dependências Python
-│   └── .env                 # Configuração (runtime)
+│   ├── src/
+│   │   ├── main.py              # API FastAPI (src/main.py)
+│   │   ├── config.py           # Configurações
+│   │   ├── api/                # Routers API
+│   │   │   ├── recursion.py    # Recursion endpoints (v2)
+│   │   │   ├── websocket.py    # WebSocket endpoints
+│   │   │   └── compatibility.py # API v1 compatibility
+│   │   ├── providers.py        # Abstração de provedores
+│   │   ├── engines/            # Técnicas de recursão
+│   │   ├── models/             # Modelos SQLAlchemy
+│   │   └── requirements.txt    # Dependências Python
+│   ├── .env                    # Configuração (criar a partir do .env.example)
+│   ├── Dockerfile              # Container backend
+│   └── docs/                   # Documentação técnica
 ├── frontend/
 │   ├── src/
-│   │   ├── api.js           # Cliente API
-│   │   ├── App.js           # Componente raiz
-│   │   ├── MainPage.js      # Página principal
-│   │   ├── SettingsPage.js  # Página de configurações
-│   │   ├── GalleryPage.js  # Galeria
-│   │   └── DiffDisplay.js   # Componente de diff
+│   │   ├── App.js              # Componente raiz
+│   │   ├── MainPage.js        # Página principal
+│   │   ├── SettingsPage.js    # Página de configurações
+│   │   ├── GalleryPage.js     # Galeria
+│   │   ├── DiffDisplay.js     # Componente de diff
+│   │   ├── api.js             # Cliente API
+│   │   └── reportWebVitals.js # Métricas de performance
 │   ├── public/
-│   └── package.json
-├── docs/                    # Documentação
-├── docker-compose.yml       # Configuração Docker
-├── CHANGELOG.md           # Histórico de versões
-└── README.md              # Este arquivo
+│   ├── package.json
+│   └── Dockerfile             # Container frontend
+├── docs/                      # Documentação geral
+├── docker-compose.yml         # Configuração Docker
+├── CHANGELOG.md              # Histórico de versões
+└── README.md                 # Este arquivo
 ```
 
 ## Desenvolvimento
@@ -257,6 +185,20 @@ docker build -t prompt-boost-frontend ./frontend
 
 ## Troubleshooting
 
+### Erro "error parsing value for field CORS_ORIGINS"
+```bash
+# O formato deve ser JSON array, não lista separada por vírgula
+# ERRADO: CORS_ORIGINS=http://localhost:3000,http://localhost:8000
+# CORRETO: CORS_ORIGINS=["http://localhost:3000","http://localhost:8000"]
+```
+
+### Erro "The loaded 'pysqlite' is not async"
+```bash
+# Use o driver aiosqlite para SQLite async
+# DATABASE_URL=sqlite+aiosqlite:///./prompt_boost.db
+# Não use: sqlite:/// (sync) ou pysqlite
+```
+
 ### Erro 429 (Too Many Requests)
 O rate limit está configurado para 30 req/min. Aguarde ou ajuste em configurações.
 
@@ -272,11 +214,18 @@ Certifique-se que o backend está rodando e o frontend usa a URL correta da API.
 ### Container não inicia
 ```bash
 # Verificar logs
-docker-compose logs backend
+docker compose logs backend
 
 # Rebuild
-docker-compose build --no-cache
-docker-compose up -d
+docker compose build --no-cache
+docker compose up -d
+```
+
+### Frontend 502 Bad Gateway
+```bash
+# Verificar se o backend está rodando
+docker compose ps
+docker compose logs backend
 ```
 
 ## Contribuição
@@ -292,6 +241,18 @@ Contribuições são bem-vindas! Leia [CONTRIBUTING.md](CONTRIBUTING.md) para de
 ## Changelog
 
 Veja [CHANGELOG.md](CHANGELOG.md) para o histórico completo de versões.
+
+### v2.0.1 (2026-04-12)
+- ✅ Backend com SQLite + aiosqlite (não requer PostgreSQL)
+- ✅ API Compatibility Layer v1 para frontends legacy
+- ✅ Correção de erros CORS e driver async
+- ✅ Troubleshooting atualizado
+
+### v2.0.0
+- ✅ Sistema de recursão com 7 técnicas LLM
+- ✅ Multi-provider (OpenAI, Anthropic, Gemini, Groq)
+- ✅ WebSocket streaming
+- ✅ Prometheus metrics
 
 ## Licença
 

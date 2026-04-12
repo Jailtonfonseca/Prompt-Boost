@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-04-12
+
+### Added
+- SQLite database with aiosqlite driver (no PostgreSQL required)
+- API Compatibility Layer v1 (`/api/*` endpoints) for legacy frontends
+- `src/api/compatibility.py` - compatibility router
+- `src/reportWebVitals.js` - performance metrics
+- Troubleshooting section in README with common Docker errors
+
+### Changed
+- Backend now works without PostgreSQL/Redis (SQLite by default)
+- CORS_ORIGINS format: JSON array `["http://localhost:3000"]` instead of comma-separated
+- DATABASE_URL: `sqlite+aiosqlite:///./prompt_boost.db`
+- Docker Compose: environment variables for SQLite config
+- Documentation updated for new setup requirements
+
+### Fixed
+- CORS parsing error: "error parsing value for field CORS_ORIGINS"
+- SQLAlchemy error: "The loaded 'pysqlite' is not async"
+- Backend not starting due to import errors
+- Frontend 502 Bad Gateway when backend unavailable
+
 ## [1.4.0] - 2026-04-10
 
 ### Added

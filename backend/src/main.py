@@ -17,6 +17,7 @@ from starlette.responses import Response
 from src.config import settings
 from src.utils.logger import setup_logging
 from src.api import recursion_router, websocket_router
+from src.api.compatibility import router as compatibility_router
 
 
 # Prometheus metrics - HTTP
@@ -176,6 +177,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(compatibility_router)
 app.include_router(recursion_router)
 app.include_router(websocket_router)
 

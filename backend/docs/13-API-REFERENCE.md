@@ -330,6 +330,45 @@ async def health():
 
 ---
 
+## 📚 API v1 Compatibility Layer
+
+Para manter compatibilidade com frontends da versão 1.x, o backend oferece endpoints na rota `/api/*`:
+
+### Endpoints de Compatibilidade v1
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| GET | `/api/providers` | Lista provedores e modelos disponíveis |
+| GET | `/api/config` | Retorna configuração atual do sistema |
+| POST | `/api/config` | Salva nova configuração |
+| POST | `/api/config/test-provider` | Testa conexão com provedor |
+| POST | `/api/config/test` | Testa API key |
+| POST | `/api/improve-prompt` | Melhora prompt (versão simples) |
+| POST | `/api/prompts` | Salva par de prompts |
+| GET | `/api/prompts/{id}` | Recupera prompt pelo ID |
+| GET | `/api/gallery` | Lista prompts públicos |
+
+### Exemplo de Uso
+
+```bash
+# Listar provedores
+curl http://localhost:8000/api/providers
+
+# Testar provedor
+curl -X POST http://localhost:8000/api/config/test-provider \
+  -H "Content-Type: application/json" \
+  -d '{"provider_type": "openai", "api_key": "sk-...", "model": "gpt-4o"}'
+
+# Melhorar prompt
+curl -X POST http://localhost:8000/api/improve-prompt \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Write a function to add two numbers"}'
+```
+
+> **Nota**: Para usar as 7 técnicas avançadas de recursão, use os endpoints `/api/recursion/*` (v2).
+
+---
+
 ## ✅ Checklist
 
 - [ ] Definir todos Pydantic models

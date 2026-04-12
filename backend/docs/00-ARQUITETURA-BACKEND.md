@@ -27,45 +27,18 @@ O backend do Prompt-Boost v2.0 é um **sistema de raciocínio recursivo** que pe
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
-│ ROUTER LAYER (services/recursion_router.py)               │
-├─────────────────────────────────────────────────────────────┤
-│  RecursionRouter (Dispatcher)                               │
-│  ├─ Route by technique                                      │
-│  ├─ Validate config                                         │
-│  └─ Stream results to WebSocket                             │
-└────────────┬──────────────────────────────────────────────────┘
-             │
-┌────────────▼──────────────────────────────────────────────────┐
-│ ENGINE LAYER (engines/)                                     │
-├─────────────────────────────────────────────────────────────┤
-│ RecursiveThinkingEngine (Base Class)                        │
-│  ├─ SelfRefineEngine        (Self-Refine + Reflexion)      │
-│  ├─ TreeOfThoughtsEngine    (ToT + pruning)                 │
-│  ├─ GraphOfThoughtsEngine   (GoT + DAG)                     │
-│  ├─ MCTSEngine              (Monte Carlo Tree Search)        │
-│  ├─ DebateEngine            (Multi-Agent)                   │
-│  ├─ AlignmentEngine         (Neural + Symbolic)             │
-│  └─ AutoFormalEngine        (NL → Lean4)                    │
-└────────────┬──────────────────────────────────────────────────┘
-             │
-┌────────────▼──────────────────────────────────────────────────┐
-│ PROVIDER LAYER (providers/)                                 │
-├─────────────────────────────────────────────────────────────┤
-│ LLMProvider (Base)                                          │
-│  ├─ OpenAIProvider (GPT-4, o1, etc)                        │
-│  ├─ AnthropicProvider (Claude)                              │
-│  └─ GeminiProvider (Google)                                 │
-└────────────┬──────────────────────────────────────────────────┘
-             │
-┌────────────▼──────────────────────────────────────────────────┐
 │ DATA LAYER                                                  │
 ├─────────────────────────────────────────────────────────────┤
-│ Database (SQLAlchemy + PostgreSQL)                          │
+│ Database (SQLAlchemy + SQLite com aiosqlite)               │
 │ ├─ Execution (tracking)                                     │
 │ ├─ Iteration (each step)                                    │
 │ └─ Result (final output)                                    │
 │                                                             │
-│ Cache (Redis) [Optional]                                    │
+│ O banco SQLite é inicializado automaticamente e não        │
+│ requer instalação adicional. Para PostgreSQL, use          │
+│ DATABASE_URL=postgresql+asyncpg://user:pass@host/db         │
+│                                                             │
+│ Cache (Redis) [Optional - não requerido para básico]       │
 │ ├─ Results cache                                            │
 │ └─ Embedding cache                                          │
 └─────────────────────────────────────────────────────────────┘
@@ -478,6 +451,35 @@ async def create_iteration(self, execution_id, data):
     await self.db.add(iteration)
     await self.db.commit()
 ```
+
+---
+
+## 🔌 Compatibility Layer (API v1)
+
+Para manter compatibilidade com frontends da versão 1.x, o backend inclui um **Compatibility Router** (`src/api/compatibility.py`):
+
+### Endpoints de Compatibilidade
+
+| Endpoint | Descrição |
+|----------|-----------|
+| `GET /api/providers` | Lista provedores disponíveis |
+| `GET /api/config` | Retorna configuração atual |
+| `POST /api/config` | Salva configuração |
+| `POST /api/config/test-provider` | Testa conexão com provedor |
+| `POST /api/improve-prompt` | Melhora prompt (sem técnica avançada) |
+| `POST /api/prompts` | Salva par de prompts |
+| `GET /api/gallery` | Lista prompts públicos |
+
+### Configuração
+
+O Compatibility Layer é automaticamente registrado no `main.py`:
+
+```python
+from src.api.compatibility import router as compatibility_router
+app.include_router(compatibility_router)
+```
+
+> **Nota**: O Compatibility Layer retorna respostas simplificadas para endpoints que não exigem técnicas avançadas de recursão. Para usar as 7 técnicas, utilize `/api/recursion/execute`.
 
 ---
 
